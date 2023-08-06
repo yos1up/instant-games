@@ -15,18 +15,151 @@
 </head>
 <body>
     <!-- リンク付き画像 -->
-    <div id="div-target">
+    <div id="div-target" style="position: absolute">
         <a href="vnd.youtube.kids://"><img src="img/app-icon.jpeg" width="100px" height="100px"></img></a>
     </div>
     <!-- スクリプト -->
     <script type="text/javascript">
-        const divTarget = document.getElementById('div-target');
+        const lerp = (a, b, x, y, t) => {
+            /* t in [x, y] => what in [a, b] */
+            return (t - x) / (y - x) * (b - a) + a;
+        };
+        const dot = ([x1, y1], [x2, y2]) => {
+            return x1 * x2 + y1 * y2;
+        };
+        const norm = ([x, y]) => {
+            return Math.sqrt(x * x + y * y);
+        }
+        const normalizeCoordination = ([x, y]) => {
+            return [
+                lerp(-1, 1, 0, window.innerWidth - 100, x),
+                lerp(-1, 1, 0, window.innerHeight - 100, y)
+            ];
+        };
+        const denormalizeCoordination = ([u, v]) => {
+            return [
+                lerp(0, window.innerWidth - 100, -1, 1, u),
+                lerp(0, window.innerHeight - 100, -1, 1, v)
+            ];
+        };
+        const setElementPosition = ([u, v], elem) => {
+            const [x, y] = denormalizeCoordination([u, v]);
+            elem.style.left = Math.floor(x) + 'px';
+            elem.style.top = Math.floor(y) + 'px';
+        };
+        class Character {
+            constructor(elem) {
+                this.elem = elem;
+                this.pos = [0, 0];
+                this.vel = [0, 0];
+                this.acc = [0, 0];
+                this.timerId = window.setInterval(
+                    () => {
+                        try {
+                            this.advance();
+                        } catch (e) {
+                            window.clearInterval(this.timerId);
+                            throw e;
+                        }
+                    },
+                    1000 / 50
+                );
+            }
+            setPosition([x, y]) {
+                this.pos = [x, y];
+                setElementPosition([x, y], this.elem);
+            }
+            setVelocity([vx, vy]) {
+                this.vel = [vx, vy];
+            }
+            setAcceleration([ax, ay]) {
+                this.acc = [ax, ay];
+            }
+            advance(){
+                this.acc[0] = (Math.random() - 0.5) * 0.005;
+                this.acc[1] = (Math.random() - 0.5) * 0.005;
+                const [newPos, newVel] = computeNewPositionAndVelocity(
+                    this.pos, this.vel, this.acc
+                );
+                // limit velocity
+                const newVelLength = norm(newVel);
+                const maxVelLength = 0.015;
+                if (newVelLength > maxVelLength) {
+                    newVel[0] *= maxVelLength / newVelLength;
+                    newVel[1] *= maxVelLength / newVelLength;
+                }
+                this.setPosition(newPos);
+                this.setVelocity(newVel);
+            }
+        };
+        // 環境（障害物など）依存的に，境界点と法線ベクトルを計算する
+        const computeBoundary = (pos, newPos) => {
+            const [x, y] = pos;
+            const [nx, ny] = newPos;
+            // とりあえず外周だけ
+            if (nx < -1) {
+                return {
+                    pos: [-1, lerp(y, ny, x, nx, -1)],
+                    normal: [1, 0]
+                };
+            } else if (nx > 1) {
+                return {
+                    pos: [1, lerp(y, ny, x, nx, 1)],
+                    normal: [-1, 0]
+                };
+            } else if (ny < -1) {
+                return {
+                    pos: [lerp(x, nx, y, ny, -1), -1],
+                    normal: [0, 1]
+                };
+            } else if (ny > 1) {
+                return {
+                    pos: [lerp(x, nx, y, ny, 1), 1],
+                    normal: [0, -1]
+                };
+            }
+            return null;
+        };
+        // 環境（障害物など）依存的に，新しい位置と速度を計算する
+        const computeNewPositionAndVelocity = (pos, vel, acc) => {
+            let newVel = [
+                vel[0] + acc[0],
+                vel[1] + acc[1]
+            ];
+            let newPos = [
+                pos[0] + vel[0],
+                pos[1] + vel[1]
+            ];
+            const boundary = computeBoundary(pos, newPos);
+            // boundary === {pos, normal (inward, normalized)}
+            if (boundary) {
+                const overRun = [
+                    newPos[0] - boundary.pos[0],
+                    newPos[1] - boundary.pos[1]
+                ];
+                const overRunLengthInNormalDir = dot(overRun, boundary.normal); // < 0
+                newPos = [
+                    newPos[0] - boundary.normal[0] * overRunLengthInNormalDir,
+                    newPos[1] - boundary.normal[1] * overRunLengthInNormalDir
+                ];
+                const velLengthInNormalDir = dot(newVel, boundary.normal); // < 0
+                newVel = [
+                    newVel[0] - 2 * boundary.normal[0] * velLengthInNormalDir,
+                    newVel[1] - 2 * boundary.normal[1] * velLengthInNormalDir
+                ];
+            }
+            return [newPos, newVel];
+        };
+        /*
         window.setInterval(() => {
             // divTarget の絶対位置をランダムに設定する
-            divTarget.style.position = 'absolute';
-            divTarget.style.top = Math.floor( Math.random() * (window.innerHeight - 100) ) + 'px';
-            divTarget.style.left = Math.floor( Math.random() * (window.innerWidth - 100) ) + 'px';
-        }, 3000);        
+            setTargetPosition(
+                Math.random() * (window.innerWidth - 100),
+                Math.random() * (window.innerHeight - 100)  
+            );
+        }, 1000);
+        */
+        new Character(document.getElementById('div-target'));     
     </script>
 </body>
 </html>
