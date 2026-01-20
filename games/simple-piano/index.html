@@ -175,7 +175,7 @@
             // 白鍵の位置を基準に配置
             const whiteKeyElement = keyElements.get(blackKey.afterWhite);
             const whiteKeyIndex = whiteKeys.indexOf(blackKey.afterWhite);
-            key.style.left = `${(whiteKeyIndex * 64) + 44}px`; // 64 = 60px width + 4px border (2px each side)
+            key.style.left = `${(whiteKeyIndex * 60) + 40}px`; // Position at boundary between white keys
 
             pianoContainer.appendChild(key);
             keyElements.set(blackKey.note, key);
