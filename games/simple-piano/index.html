@@ -185,20 +185,55 @@
         function playNote(note) {
             if (activeNotes.has(note)) return; // 既に再生中
 
-            const oscillator = audioContext.createOscillator();
+            // 基本音のオシレーター
+            const oscillator1 = audioContext.createOscillator();
+            oscillator1.type = 'triangle';
+            oscillator1.frequency.setValueAtTime(frequencies[note], audioContext.currentTime);
+
+            // 倍音を追加（よりピアノらしい音色に）
+            const oscillator2 = audioContext.createOscillator();
+            oscillator2.type = 'sine';
+            oscillator2.frequency.setValueAtTime(frequencies[note] * 2, audioContext.currentTime);
+
+            const oscillator3 = audioContext.createOscillator();
+            oscillator3.type = 'sine';
+            oscillator3.frequency.setValueAtTime(frequencies[note] * 3, audioContext.currentTime);
+
+            // ゲインノード設定
             const gainNode = audioContext.createGain();
+            const gain2 = audioContext.createGain();
+            const gain3 = audioContext.createGain();
 
-            oscillator.type = 'sine';
-            oscillator.frequency.setValueAtTime(frequencies[note], audioContext.currentTime);
-
+            // ピアノのような音量エンベロープ（アタック、ディケイ）
             gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-            gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.05);
+            gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.02);
+            gainNode.gain.exponentialRampToValueAtTime(0.2, audioContext.currentTime + 0.1);
 
-            oscillator.connect(gainNode);
+            gain2.gain.setValueAtTime(0, audioContext.currentTime);
+            gain2.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.02);
+            gain2.gain.exponentialRampToValueAtTime(0.05, audioContext.currentTime + 0.1);
+
+            gain3.gain.setValueAtTime(0, audioContext.currentTime);
+            gain3.gain.linearRampToValueAtTime(0.05, audioContext.currentTime + 0.02);
+            gain3.gain.exponentialRampToValueAtTime(0.02, audioContext.currentTime + 0.1);
+
+            // 接続
+            oscillator1.connect(gainNode);
+            oscillator2.connect(gain2);
+            oscillator3.connect(gain3);
+
             gainNode.connect(audioContext.destination);
+            gain2.connect(audioContext.destination);
+            gain3.connect(audioContext.destination);
 
-            oscillator.start();
-            activeNotes.set(note, { oscillator, gainNode });
+            oscillator1.start();
+            oscillator2.start();
+            oscillator3.start();
+
+            activeNotes.set(note, {
+                oscillators: [oscillator1, oscillator2, oscillator3],
+                gains: [gainNode, gain2, gain3]
+            });
 
             pressedKeys.add(note);
             updateDisplay();
@@ -213,10 +248,22 @@
         function stopNote(note) {
             if (!activeNotes.has(note)) return;
 
-            const { oscillator, gainNode } = activeNotes.get(note);
+            const { oscillators, gains } = activeNotes.get(note);
+            const now = audioContext.currentTime;
+            const releaseTime = 0.5; // リリース時間を長くしてノイズを緩和
 
-            gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.1);
-            oscillator.stop(audioContext.currentTime + 0.1);
+            // 滑らかにフェードアウト（指数関数的減衰）
+            gains.forEach((gain, index) => {
+                const currentValue = gain.gain.value;
+                gain.gain.cancelScheduledValues(now);
+                gain.gain.setValueAtTime(currentValue, now);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + releaseTime);
+            });
+
+            // 全てのオシレーターを停止
+            oscillators.forEach(osc => {
+                osc.stop(now + releaseTime);
+            });
 
             activeNotes.delete(note);
             pressedKeys.delete(note);
