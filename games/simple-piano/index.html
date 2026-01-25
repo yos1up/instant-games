@@ -295,7 +295,10 @@
                 return;
             }
 
-            pressedKeys.forEach(note => {
+            // 低音から高音の順にソート（周波数の昇順）
+            const sortedNotes = Array.from(pressedKeys).sort((a, b) => frequencies[a] - frequencies[b]);
+
+            sortedNotes.forEach(note => {
                 const noteDiv = document.createElement('div');
                 noteDiv.className = 'note-display';
                 noteDiv.textContent = noteNames[note];
