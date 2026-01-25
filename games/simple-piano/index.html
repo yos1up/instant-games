@@ -61,7 +61,7 @@
             display: flex;
             justify-content: center;
             align-items: flex-start;
-            padding: 20px;
+            padding: 10px;
             background: #2c3e50;
         }
 
@@ -72,7 +72,7 @@
         }
 
         .white-key {
-            width: 60px;
+            width: 70px;
             height: 100%;
             background: linear-gradient(to bottom, #ffffff 0%, #f0f0f0 100%);
             border: 2px solid #000;
@@ -90,8 +90,8 @@
         }
 
         .black-key {
-            width: 40px;
-            height: 60%;
+            width: 50px;
+            height: 50%;
             background: linear-gradient(to bottom, #000000 0%, #2c2c2c 100%);
             border: 1px solid #000;
             border-radius: 0 0 5px 5px;
@@ -175,7 +175,7 @@
             // 白鍵の位置を基準に配置
             const whiteKeyElement = keyElements.get(blackKey.afterWhite);
             const whiteKeyIndex = whiteKeys.indexOf(blackKey.afterWhite);
-            key.style.left = `${(whiteKeyIndex * 60) + 40}px`; // Position at boundary between white keys
+            key.style.left = `${(whiteKeyIndex * 70) + 45}px`; // Position at boundary between white keys
 
             pianoContainer.appendChild(key);
             keyElements.set(blackKey.note, key);
