@@ -152,6 +152,11 @@
         const activeNotes = new Map(); // 現在押されている音
         const pressedKeys = new Set(); // 現在押されている鍵盤
 
+        // 自動リセット用のタイマー
+        let resetTimer = null;
+        const RESET_THRESHOLD = 5; // 5つ以上の鍵盤
+        const RESET_DELAY = 1000; // 1秒
+
         // ピアノ鍵盤生成
         const pianoContainer = document.getElementById('piano-container');
         const keyElements = new Map();
@@ -242,6 +247,9 @@
             if (keyElement) {
                 keyElement.classList.add('pressed');
             }
+
+            // リセットタイマーを管理
+            manageResetTimer();
         }
 
         // 音を停止
@@ -273,6 +281,9 @@
             if (keyElement) {
                 keyElement.classList.remove('pressed');
             }
+
+            // リセットタイマーを管理
+            manageResetTimer();
         }
 
         // 表示を更新
@@ -290,6 +301,60 @@
                 noteDiv.textContent = noteNames[note];
                 display.appendChild(noteDiv);
             });
+        }
+
+        // 全ての鍵盤をリセット
+        function resetAllKeys() {
+            // タイマーをクリア
+            if (resetTimer) {
+                clearTimeout(resetTimer);
+                resetTimer = null;
+            }
+
+            // 全ての音を停止
+            const now = audioContext.currentTime;
+            const releaseTime = 0.3;
+
+            activeNotes.forEach((noteData, note) => {
+                const { oscillators, gains } = noteData;
+
+                gains.forEach((gain) => {
+                    const currentValue = gain.gain.value;
+                    gain.gain.cancelScheduledValues(now);
+                    gain.gain.setValueAtTime(currentValue, now);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, now + releaseTime);
+                });
+
+                oscillators.forEach(osc => {
+                    osc.stop(now + releaseTime);
+                });
+            });
+
+            // 状態をクリア
+            activeNotes.clear();
+            pressedKeys.clear();
+            updateDisplay();
+
+            // 全ての鍵盤のvisual stateをリセット
+            keyElements.forEach((keyElement) => {
+                keyElement.classList.remove('pressed');
+            });
+        }
+
+        // リセットタイマーを管理
+        function manageResetTimer() {
+            // 既存のタイマーをクリア
+            if (resetTimer) {
+                clearTimeout(resetTimer);
+                resetTimer = null;
+            }
+
+            // 5つ以上の鍵盤が押されている場合、タイマーを開始
+            if (pressedKeys.size >= RESET_THRESHOLD) {
+                resetTimer = setTimeout(() => {
+                    resetAllKeys();
+                }, RESET_DELAY);
+            }
         }
 
         // イベントハンドラー
