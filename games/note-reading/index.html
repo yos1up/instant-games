@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>譜読みタイムアタック</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        body {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            font-family: 'Arial', sans-serif;
+            touch-action: none;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #header {
+            height: 60px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        #staff-area {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #buttons-area {
+            height: 120px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 20px;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .answer-btn {
+            width: 60px;
+            height: 80px;
+            border: none;
+            border-radius: 12px;
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: transform 0.1s, background 0.1s;
+        }
+
+        .answer-btn:active {
+            transform: scale(0.95);
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        .answer-btn.correct {
+            background: rgba(46, 204, 113, 0.7);
+            animation: correctFlash 0.3s ease;
+        }
+
+        .answer-btn.wrong {
+            background: rgba(231, 76, 60, 0.7);
+            animation: wrongShake 0.3s ease;
+        }
+
+        @keyframes correctFlash {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes wrongShake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            50% { transform: translateX(8px); }
+            75% { transform: translateX(-8px); }
+            100% { transform: translateX(0); }
+        }
+
+        #result-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 100;
+        }
+
+        #result-overlay.visible {
+            display: flex;
+        }
+
+        #result-message {
+            font-size: 48px;
+            font-weight: bold;
+            color: #f1c40f;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        #result-time {
+            font-size: 64px;
+            font-weight: bold;
+            color: white;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        #retry-btn {
+            padding: 15px 40px;
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+            background: rgba(52, 152, 219, 0.8);
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        #retry-btn:active {
+            transform: scale(0.95);
+        }
+
+        #start-overlay {
+            display: flex;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 100;
+        }
+
+        #start-overlay.hidden {
+            display: none;
+        }
+
+        #start-title {
+            font-size: 36px;
+            font-weight: bold;
+            color: white;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        #start-description {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 30px;
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        #start-btn {
+            padding: 15px 40px;
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+            background: rgba(46, 204, 113, 0.8);
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        #start-btn:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <span id="progress">1 / 10</span>
+        <span id="timer">0.00 秒</span>
+    </div>
+
+    <div id="staff-area">
+        <canvas id="staff-canvas"></canvas>
+    </div>
+
+    <div id="buttons-area">
+        <button class="answer-btn" data-note="C">ド</button>
+        <button class="answer-btn" data-note="D">レ</button>
+        <button class="answer-btn" data-note="E">ミ</button>
+        <button class="answer-btn" data-note="F">ファ</button>
+        <button class="answer-btn" data-note="G">ソ</button>
+    </div>
+
+    <div id="start-overlay">
+        <div id="start-title">譜読みタイムアタック</div>
+        <div id="start-description">
+            五線譜に表示される音符の<br>
+            音名をすばやく答えよう!<br>
+            全10問
+        </div>
+        <button id="start-btn">スタート</button>
+    </div>
+
+    <div id="result-overlay">
+        <div id="result-message"></div>
+        <div id="result-time"></div>
+        <button id="retry-btn">もう一度</button>
+    </div>
+
+    <script>
+        // ゲーム状態
+        const TOTAL_QUESTIONS = 10;
+        const NOTES = ['C', 'D', 'E', 'F', 'G'];
+        const NOTE_NAMES = { C: 'ド', D: 'レ', E: 'ミ', F: 'ファ', G: 'ソ' };
+
+        let currentQuestion = 0;
+        let currentNote = null;
+        let startTime = null;
+        let timerInterval = null;
+        let gameActive = false;
+
+        // 五線譜上の音符のY位置（ト音記号）
+        // 五線の線は上からF5, D5, B4, G4, E4
+        // 線の間隔を1単位とすると:
+        //   E4 = 0 (一番下の線)
+        //   F4 = 0.5
+        //   G4 = 1 (下から二番目の線)
+        //   A4 = 1.5
+        //   B4 = 2 (真ん中の線)
+        //   C5 = 2.5
+        //   D5 = 3 (上から二番目の線)
+        //   E5 = 3.5
+        //   F5 = 4 (一番上の線)
+        // C4(ド)は一番下の線より2段下 → -2 (加線が必要)
+        // D4(レ)は一番下の線より1.5段下 → -1.5
+        // ※ 上が正方向ではなく、描画上は下が正方向なので反転する
+
+        const NOTE_POSITIONS = {
+            C: -2,    // ド: 加線1本（E4の線から2段下）
+            D: -1,    // レ: E4の線の1段下（間）
+            E: 0,     // ミ: E4の線上（一番下の線）
+            F: 1,     // ファ: E4とG4の間
+            G: 2      // ソ: G4の線上（下から二番目の線）
+        };
+
+        // Canvas描画
+        const canvas = document.getElementById('staff-canvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            const area = document.getElementById('staff-area');
+            const dpr = window.devicePixelRatio || 1;
+            const width = Math.min(area.clientWidth - 40, 500);
+            const height = Math.min(area.clientHeight - 40, 300);
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
+            canvas.width = width * dpr;
+            canvas.height = height * dpr;
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            if (currentNote) {
+                drawStaff(currentNote);
+            }
+        }
+
+        function drawStaff(note) {
+            const w = parseFloat(canvas.style.width);
+            const h = parseFloat(canvas.style.height);
+            ctx.clearRect(0, 0, w, h);
+
+            // 五線の描画パラメータ
+            const staffTop = h * 0.25;
+            const lineSpacing = Math.min(h * 0.1, 16);
+            const staffLeft = w * 0.1;
+            const staffRight = w * 0.9;
+
+            // 五線を描画
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 5; i++) {
+                const y = staffTop + i * lineSpacing;
+                ctx.beginPath();
+                ctx.moveTo(staffLeft, y);
+                ctx.lineTo(staffRight, y);
+                ctx.stroke();
+            }
+
+            // ト音記号を描画（テキストで代用）
+            const clefSize = lineSpacing * 5.5;
+            ctx.font = `${clefSize}px serif`;
+            ctx.fillStyle = 'white';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const clefX = staffLeft + lineSpacing * 1.5;
+            const clefY = staffTop + lineSpacing * 2;
+            ctx.fillText('\u{1D11E}', clefX, clefY);
+
+            // 音符の位置を計算
+            // E4が一番下の線（staffTop + 4 * lineSpacing）
+            // 上方向が正なので、posが大きいほどY座標は小さい
+            const bottomLineY = staffTop + 4 * lineSpacing;
+            const notePos = NOTE_POSITIONS[note];
+            // notePos: -2 (C) ~ 2 (G)
+            // 1単位 = lineSpacing / 2（半音階ではなく線-間の距離）
+            const noteY = bottomLineY - notePos * (lineSpacing / 2);
+            const noteX = w * 0.55;
+
+            // 加線を描画（C4の場合）
+            if (note === 'C') {
+                // C4は加線1本必要（E4の下2段 = 1本の加線）
+                const ledgerY = bottomLineY + lineSpacing;
+                ctx.beginPath();
+                ctx.moveTo(noteX - lineSpacing * 1.2, ledgerY);
+                ctx.lineTo(noteX + lineSpacing * 1.2, ledgerY);
+                ctx.stroke();
+            }
+
+            // 四分音符を描画
+            // 符頭（塗りつぶした楕円）
+            const noteRadiusX = lineSpacing * 0.55;
+            const noteRadiusY = lineSpacing * 0.4;
+            ctx.save();
+            ctx.translate(noteX, noteY);
+            ctx.rotate(-0.2); // わずかに傾ける
+            ctx.beginPath();
+            ctx.ellipse(0, 0, noteRadiusX, noteRadiusY, 0, 0, Math.PI * 2);
+            ctx.fillStyle = 'white';
+            ctx.fill();
+            ctx.restore();
+
+            // 符幹（棒）
+            const stemHeight = lineSpacing * 3.5;
+            const stemX = noteX + noteRadiusX * 0.9;
+            ctx.beginPath();
+            ctx.lineWidth = 2.5;
+            ctx.moveTo(stemX, noteY);
+            ctx.lineTo(stemX, noteY - stemHeight);
+            ctx.stroke();
+            ctx.lineWidth = 2;
+        }
+
+        // ゲームロジック
+        function startGame() {
+            currentQuestion = 0;
+            startTime = Date.now();
+            gameActive = true;
+            document.getElementById('start-overlay').classList.add('hidden');
+            document.getElementById('result-overlay').classList.remove('visible');
+            timerInterval = setInterval(updateTimer, 50);
+            nextQuestion();
+        }
+
+        function nextQuestion() {
+            currentQuestion++;
+            document.getElementById('progress').textContent = `${currentQuestion} / ${TOTAL_QUESTIONS}`;
+
+            // ランダムに音を選ぶ
+            currentNote = NOTES[Math.floor(Math.random() * NOTES.length)];
+            drawStaff(currentNote);
+
+            // ボタンの状態をリセット
+            document.querySelectorAll('.answer-btn').forEach(btn => {
+                btn.classList.remove('correct', 'wrong');
+                btn.disabled = false;
+            });
+        }
+
+        function updateTimer() {
+            if (!startTime) return;
+            const elapsed = (Date.now() - startTime) / 1000;
+            document.getElementById('timer').textContent = `${elapsed.toFixed(2)} 秒`;
+        }
+
+        function handleAnswer(selectedNote) {
+            if (!gameActive) return;
+
+            const btn = document.querySelector(`.answer-btn[data-note="${selectedNote}"]`);
+
+            if (selectedNote === currentNote) {
+                // 正解
+                btn.classList.add('correct');
+                document.querySelectorAll('.answer-btn').forEach(b => b.disabled = true);
+
+                if (currentQuestion >= TOTAL_QUESTIONS) {
+                    // ゲーム終了
+                    gameActive = false;
+                    clearInterval(timerInterval);
+                    const elapsed = (Date.now() - startTime) / 1000;
+                    setTimeout(() => showResult(elapsed), 400);
+                } else {
+                    setTimeout(() => nextQuestion(), 400);
+                }
+            } else {
+                // 不正解
+                btn.classList.add('wrong');
+                setTimeout(() => btn.classList.remove('wrong'), 300);
+            }
+        }
+
+        function showResult(elapsed) {
+            document.getElementById('result-message').textContent = 'おめでとう！';
+            document.getElementById('result-time').textContent = `${elapsed.toFixed(2)} 秒`;
+            document.getElementById('result-overlay').classList.add('visible');
+        }
+
+        // イベント設定
+        document.querySelectorAll('.answer-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                handleAnswer(btn.dataset.note);
+            });
+            btn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                handleAnswer(btn.dataset.note);
+            }, { passive: false });
+        });
+
+        document.getElementById('start-btn').addEventListener('click', startGame);
+        document.getElementById('start-btn').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            startGame();
+        }, { passive: false });
+
+        document.getElementById('retry-btn').addEventListener('click', startGame);
+        document.getElementById('retry-btn').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            startGame();
+        }, { passive: false });
+
+        // 初期化
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+    </script>
+</body>
+</html>
