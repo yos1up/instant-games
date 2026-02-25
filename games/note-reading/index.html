@@ -41,6 +41,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            position: relative;
         }
 
         #buttons-area {
@@ -180,7 +181,7 @@
 
         #correct-circle {
             display: none;
-            position: fixed;
+            position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
@@ -264,6 +265,7 @@
 
     <div id="staff-area">
         <canvas id="staff-canvas"></canvas>
+        <div id="correct-circle"></div>
     </div>
 
     <div id="buttons-area">
@@ -273,8 +275,6 @@
         <button class="answer-btn" data-note="F">ファ</button>
         <button class="answer-btn" data-note="G">ソ</button>
     </div>
-
-    <div id="correct-circle"></div>
 
     <div id="start-overlay">
         <div id="start-title">譜読みタイムアタック</div>
@@ -306,6 +306,45 @@
         let timerInterval = null;
         let gameActive = false;
         let bestTime = null;
+
+        // 効果音用AudioContext
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playCorrectSound() {
+            const now = audioContext.currentTime;
+            // 明るい短い「ピン！」
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(880, now);
+            osc.frequency.setValueAtTime(1320, now + 0.06);
+            gain.gain.setValueAtTime(0.3, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            osc.start(now);
+            osc.stop(now + 0.25);
+        }
+
+        function playCompleteSound() {
+            const now = audioContext.currentTime;
+            // ファンファーレ風の和音（ドミソド）
+            const notes = [523.25, 659.25, 783.99, 1046.50];
+            notes.forEach((freq, i) => {
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, now);
+                const start = now + i * 0.1;
+                gain.gain.setValueAtTime(0, now);
+                gain.gain.setValueAtTime(0.25, start);
+                gain.gain.exponentialRampToValueAtTime(0.01, start + 0.6);
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                osc.start(start);
+                osc.stop(start + 0.6);
+            });
+        }
 
         // 五線譜上の音符のY位置（ト音記号）
         // 五線の線は上からF5, D5, B4, G4, E4
@@ -480,6 +519,7 @@
                 // 正解
                 btn.classList.add('correct');
                 showCorrectCircle();
+                if (audioContext.state === 'suspended') audioContext.resume();
                 document.querySelectorAll('.answer-btn').forEach(b => b.disabled = true);
 
                 if (currentQuestion >= TOTAL_QUESTIONS) {
@@ -487,8 +527,10 @@
                     gameActive = false;
                     clearInterval(timerInterval);
                     const elapsed = (Date.now() - startTime) / 1000;
+                    playCompleteSound();
                     setTimeout(() => showResult(elapsed), 400);
                 } else {
+                    playCorrectSound();
                     setTimeout(() => nextQuestion(), 400);
                 }
             } else {
