@@ -133,6 +133,35 @@
             text-align: center;
         }
 
+        #new-record {
+            font-size: 36px;
+            font-weight: bold;
+            color: #e74c3c;
+            text-align: center;
+            margin-bottom: 10px;
+            animation: recordPulse 0.6s ease infinite alternate;
+        }
+
+        #new-record:empty {
+            display: none;
+        }
+
+        @keyframes recordPulse {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.1); }
+        }
+
+        #best-time {
+            font-size: 20px;
+            color: rgba(255, 255, 255, 0.7);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        #best-time:empty {
+            display: none;
+        }
+
         #retry-btn {
             padding: 15px 40px;
             font-size: 24px;
@@ -147,6 +176,33 @@
 
         #retry-btn:active {
             transform: scale(0.95);
+        }
+
+        #correct-circle {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 150px;
+            height: 150px;
+            border: 12px solid #e74c3c;
+            border-radius: 50%;
+            z-index: 50;
+            pointer-events: none;
+        }
+
+        #correct-circle.show {
+            display: block;
+            animation: circlePopIn 0.5s ease forwards;
+        }
+
+        @keyframes circlePopIn {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
+            40% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+            60% { opacity: 1; transform: translate(-50%, -50%) scale(0.95); }
+            80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
         }
 
         #start-overlay {
@@ -218,6 +274,8 @@
         <button class="answer-btn" data-note="G">ソ</button>
     </div>
 
+    <div id="correct-circle"></div>
+
     <div id="start-overlay">
         <div id="start-title">譜読みタイムアタック</div>
         <div id="start-description">
@@ -231,6 +289,8 @@
     <div id="result-overlay">
         <div id="result-message"></div>
         <div id="result-time"></div>
+        <div id="new-record"></div>
+        <div id="best-time"></div>
         <button id="retry-btn">もう一度</button>
     </div>
 
@@ -245,6 +305,7 @@
         let startTime = null;
         let timerInterval = null;
         let gameActive = false;
+        let bestTime = null;
 
         // 五線譜上の音符のY位置（ト音記号）
         // 五線の線は上からF5, D5, B4, G4, E4
@@ -401,6 +462,15 @@
             document.getElementById('timer').textContent = `${elapsed.toFixed(2)} 秒`;
         }
 
+        function showCorrectCircle() {
+            const circle = document.getElementById('correct-circle');
+            circle.classList.remove('show');
+            // reflow を強制してアニメーションをリセット
+            void circle.offsetWidth;
+            circle.classList.add('show');
+            setTimeout(() => circle.classList.remove('show'), 500);
+        }
+
         function handleAnswer(selectedNote) {
             if (!gameActive) return;
 
@@ -409,6 +479,7 @@
             if (selectedNote === currentNote) {
                 // 正解
                 btn.classList.add('correct');
+                showCorrectCircle();
                 document.querySelectorAll('.answer-btn').forEach(b => b.disabled = true);
 
                 if (currentQuestion >= TOTAL_QUESTIONS) {
@@ -428,8 +499,15 @@
         }
 
         function showResult(elapsed) {
+            const isNewRecord = bestTime === null || elapsed < bestTime;
+            if (isNewRecord) {
+                bestTime = elapsed;
+            }
+
             document.getElementById('result-message').textContent = 'おめでとう！';
             document.getElementById('result-time').textContent = `${elapsed.toFixed(2)} 秒`;
+            document.getElementById('new-record').textContent = isNewRecord ? 'NEW RECORD!' : '';
+            document.getElementById('best-time').textContent = bestTime !== null ? `ベストタイム: ${bestTime.toFixed(2)} 秒` : '';
             document.getElementById('result-overlay').classList.add('visible');
         }
 
