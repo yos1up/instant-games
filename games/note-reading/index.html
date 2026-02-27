@@ -134,17 +134,9 @@
             text-align: center;
         }
 
-        #new-record {
-            font-size: 36px;
-            font-weight: bold;
+        #result-message.new-record {
             color: #e74c3c;
-            text-align: center;
-            margin-bottom: 10px;
             animation: recordPulse 0.6s ease infinite alternate;
-        }
-
-        #new-record:empty {
-            display: none;
         }
 
         @keyframes recordPulse {
@@ -289,7 +281,6 @@
     <div id="result-overlay">
         <div id="result-message"></div>
         <div id="result-time"></div>
-        <div id="new-record"></div>
         <div id="best-time"></div>
         <button id="retry-btn">もう一度</button>
     </div>
@@ -546,9 +537,10 @@
                 bestTime = elapsed;
             }
 
-            document.getElementById('result-message').textContent = 'おめでとう！';
+            const msgEl = document.getElementById('result-message');
+            msgEl.textContent = isNewRecord ? 'NEW RECORD!' : 'CLEAR!';
+            msgEl.classList.toggle('new-record', isNewRecord);
             document.getElementById('result-time').textContent = `${elapsed.toFixed(2)} 秒`;
-            document.getElementById('new-record').textContent = isNewRecord ? 'NEW RECORD!' : '';
             document.getElementById('best-time').textContent = bestTime !== null ? `ベストタイム: ${bestTime.toFixed(2)} 秒` : '';
             document.getElementById('result-overlay').classList.add('visible');
         }
