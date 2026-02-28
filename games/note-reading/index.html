@@ -57,8 +57,8 @@
 
         .answer-btn {
             flex: 1;
-            max-width: 100px;
-            height: 90px;
+            max-width: min(18vw, 120px);
+            height: min(14vh, 120px);
             border: none;
             border-radius: 12px;
             font-size: 28px;
@@ -378,8 +378,8 @@
         function resizeCanvas() {
             const area = document.getElementById('staff-area');
             const dpr = window.devicePixelRatio || 1;
-            const width = Math.min(area.clientWidth - 40, 500);
-            const height = Math.min(area.clientHeight - 40, 300);
+            const width = Math.min(area.clientWidth * 0.9, 700);
+            const height = area.clientHeight * 0.85;
             canvas.style.width = width + 'px';
             canvas.style.height = height + 'px';
             canvas.width = width * dpr;
@@ -397,7 +397,7 @@
 
             // 五線の描画パラメータ
             const staffTop = h * 0.25;
-            const lineSpacing = Math.min(h * 0.1, 16);
+            const lineSpacing = Math.min(h * 0.1, 32);
             const staffLeft = w * 0.1;
             const staffRight = w * 0.9;
 
