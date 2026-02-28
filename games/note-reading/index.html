@@ -252,7 +252,7 @@
 <body>
     <div id="header">
         <span id="progress">1 / 10</span>
-        <span id="timer">0.00 秒</span>
+        <span id="timer">0.00 <ruby>秒<rp>(</rp><rt>びょう</rt><rp>)</rp></ruby></span>
     </div>
 
     <div id="staff-area">
@@ -269,11 +269,11 @@
     </div>
 
     <div id="start-overlay">
-        <div id="start-title">譜読みタイムアタック</div>
+        <div id="start-title"><ruby>譜読<rp>(</rp><rt>ふよ</rt><rp>)</rp></ruby>みタイムアタック</div>
         <div id="start-description">
-            五線譜に表示される音符の<br>
-            音名をすばやく答えよう!<br>
-            全10問
+            <ruby>五線譜<rp>(</rp><rt>ごせんふ</rt><rp>)</rp></ruby>に<ruby>表示<rp>(</rp><rt>ひょうじ</rt><rp>)</rp></ruby>される<ruby>音符<rp>(</rp><rt>おんぷ</rt><rp>)</rp></ruby>の<br>
+            <ruby>音名<rp>(</rp><rt>おんめい</rt><rp>)</rp></ruby>をすばやく<ruby>答<rp>(</rp><rt>こた</rt><rp>)</rp></ruby>えよう!<br>
+            <ruby>全<rp>(</rp><rt>ぜん</rt><rp>)</rp></ruby>10<ruby>問<rp>(</rp><rt>もん</rt><rp>)</rp></ruby>
         </div>
         <button id="start-btn">スタート</button>
     </div>
@@ -282,7 +282,7 @@
         <div id="result-message"></div>
         <div id="result-time"></div>
         <div id="best-time"></div>
-        <button id="retry-btn">もう一度</button>
+        <button id="retry-btn">もう<ruby>一度<rp>(</rp><rt>いちど</rt><rp>)</rp></ruby></button>
     </div>
 
     <script>
@@ -515,7 +515,7 @@
         function updateTimer() {
             if (!startTime) return;
             const elapsed = (Date.now() - startTime) / 1000;
-            document.getElementById('timer').textContent = `${elapsed.toFixed(2)} 秒`;
+            document.getElementById('timer').innerHTML = `${elapsed.toFixed(2)} <ruby>秒<rp>(</rp><rt>びょう</rt><rp>)</rp></ruby>`;
         }
 
         function showCorrectCircle() {
@@ -565,8 +565,8 @@
             const msgEl = document.getElementById('result-message');
             msgEl.textContent = isNewRecord ? 'NEW RECORD!' : 'CLEAR!';
             msgEl.classList.toggle('new-record', isNewRecord);
-            document.getElementById('result-time').textContent = `${elapsed.toFixed(2)} 秒`;
-            document.getElementById('best-time').textContent = bestTime !== null ? `ベストタイム: ${bestTime.toFixed(2)} 秒` : '';
+            document.getElementById('result-time').innerHTML = `${elapsed.toFixed(2)} <ruby>秒<rp>(</rp><rt>びょう</rt><rp>)</rp></ruby>`;
+            document.getElementById('best-time').innerHTML = bestTime !== null ? `ベストタイム: ${bestTime.toFixed(2)} <ruby>秒<rp>(</rp><rt>びょう</rt><rp>)</rp></ruby>` : '';
             document.getElementById('result-overlay').classList.add('visible');
         }
 
