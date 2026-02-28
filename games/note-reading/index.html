@@ -319,16 +319,31 @@
 
         function playCompleteSound() {
             const now = audioContext.currentTime;
-            // メロディー: ド,ド,ッ,レ,ッ,レ,ッ,ソーーーー
+            // メロディー: ド,ド,ッ,レ,ッ,レ,ッ,ソーーーー (各音をコードに)
             const melody = [
-                { freq: 523.25, time: 0.0, dur: 0.1 },   // ド
-                { freq: 523.25, time: 0.1, dur: 0.1 },   // ド
+                // ファ+ラ+ド (F4+A4+C5)
+                { freq: 349.23, time: 0.0, dur: 0.1 },
+                { freq: 440.00, time: 0.0, dur: 0.1 },
+                { freq: 523.25, time: 0.0, dur: 0.1 },
+                // ファ+ラ+ド (F4+A4+C5)
+                { freq: 349.23, time: 0.1, dur: 0.1 },
+                { freq: 440.00, time: 0.1, dur: 0.1 },
+                { freq: 523.25, time: 0.1, dur: 0.1 },
                                                            // ッ (休符)
-                { freq: 587.33, time: 0.3, dur: 0.1 },   // レ
+                // ソ+シ+レ (G4+B4+D5)
+                { freq: 392.00, time: 0.3, dur: 0.1 },
+                { freq: 493.88, time: 0.3, dur: 0.1 },
+                { freq: 587.33, time: 0.3, dur: 0.1 },
                                                            // ッ (休符)
-                { freq: 587.33, time: 0.5, dur: 0.1 },   // レ
+                // ソ+シ+レ (G4+B4+D5)
+                { freq: 392.00, time: 0.5, dur: 0.1 },
+                { freq: 493.88, time: 0.5, dur: 0.1 },
+                { freq: 587.33, time: 0.5, dur: 0.1 },
                                                            // ッ (休符)
-                { freq: 783.99, time: 0.7, dur: 1.0 },   // ソーーーー
+                // ド+ミ+ソ (C5+E5+G5)
+                { freq: 523.25, time: 0.7, dur: 1.0 },
+                { freq: 659.25, time: 0.7, dur: 1.0 },
+                { freq: 783.99, time: 0.7, dur: 1.0 },
             ];
             melody.forEach(({ freq, time, dur }) => {
                 const osc = audioContext.createOscillator();
@@ -337,8 +352,8 @@
                 osc.frequency.setValueAtTime(freq, now);
                 const start = now + time;
                 gain.gain.setValueAtTime(0, now);
-                gain.gain.setValueAtTime(0.3, start);
-                gain.gain.setValueAtTime(0.3, start + dur - 0.02);
+                gain.gain.setValueAtTime(0.2, start);
+                gain.gain.setValueAtTime(0.2, start + dur - 0.02);
                 gain.gain.exponentialRampToValueAtTime(0.01, start + dur);
                 osc.connect(gain);
                 gain.connect(audioContext.destination);
