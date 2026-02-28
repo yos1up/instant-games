@@ -468,6 +468,7 @@
 
         // ゲームロジック
         function startGame() {
+            if (audioContext.state === 'suspended') audioContext.resume();
             currentQuestion = 0;
             startTime = Date.now();
             gameActive = true;
@@ -520,7 +521,6 @@
                 // 正解
                 btn.classList.add('correct');
                 showCorrectCircle();
-                if (audioContext.state === 'suspended') audioContext.resume();
                 document.querySelectorAll('.answer-btn').forEach(b => b.disabled = true);
 
                 if (currentQuestion >= TOTAL_QUESTIONS) {
