@@ -75,6 +75,55 @@
             transition: transform 0.1s, background 0.1s;
         }
 
+        /* タブレット向けレイアウト調整 */
+        @media (min-width: 600px) {
+            #header {
+                height: 70px;
+                font-size: 24px;
+                padding: 0 30px;
+            }
+
+            .answer-btn {
+                max-width: 160px;
+                height: min(16vh, 160px);
+                font-size: 36px;
+                border-radius: 16px;
+            }
+
+            #buttons-area {
+                gap: 16px;
+                padding: 20px 20px;
+                padding-bottom: max(20px, env(safe-area-inset-bottom));
+            }
+
+            #start-title {
+                font-size: 48px;
+                margin-bottom: 20px;
+            }
+
+            #start-description {
+                font-size: 24px;
+                margin-bottom: 40px;
+            }
+
+            #start-btn, #retry-btn {
+                padding: 20px 50px;
+                font-size: 28px;
+            }
+
+            #result-message {
+                font-size: 60px;
+            }
+
+            #result-time {
+                font-size: 80px;
+            }
+
+            #best-time {
+                font-size: 24px;
+            }
+        }
+
         .answer-btn:active {
             transform: scale(0.95);
             background: rgba(255, 255, 255, 0.4);
@@ -397,8 +446,8 @@
         function resizeCanvas() {
             const area = document.getElementById('staff-area');
             const dpr = window.devicePixelRatio || 1;
-            const width = Math.min(area.clientWidth * 0.9, 700);
-            const height = area.clientHeight * 0.85;
+            const width = Math.min(area.clientWidth * 0.9, 1000);
+            const height = area.clientHeight * 0.9;
             canvas.style.width = width + 'px';
             canvas.style.height = height + 'px';
             canvas.width = width * dpr;
@@ -416,7 +465,7 @@
 
             // 五線の描画パラメータ
             const staffTop = h * 0.25;
-            const lineSpacing = Math.min(h * 0.1, 32);
+            const lineSpacing = Math.min(h * 0.1, 50);
             const staffLeft = w * 0.1;
             const staffRight = w * 0.9;
 
