@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>譜読みタイムアタック</title>
+    <title>かいとうネコの おたから大どろぼう</title>
     <style>
         * {
             margin: 0;
@@ -21,32 +21,152 @@
             width: 100vw;
             height: 100dvh;
             overflow: hidden;
-            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            background:
+                radial-gradient(ellipse at 50% 0%, rgba(120, 60, 200, 0.45) 0%, rgba(0, 0, 0, 0) 60%),
+                linear-gradient(160deg, #1b1030 0%, #0c0a1a 55%, #05040c 100%);
             font-family: 'Arial', sans-serif;
             touch-action: none;
             display: flex;
             flex-direction: column;
+            color: white;
+        }
+
+        /* 夜のびじゅつかんの まど */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                radial-gradient(circle at 12% 18%, rgba(255, 255, 255, 0.35) 0 1.5px, transparent 2px),
+                radial-gradient(circle at 78% 12%, rgba(255, 255, 255, 0.3) 0 1.5px, transparent 2px),
+                radial-gradient(circle at 40% 8%, rgba(255, 255, 255, 0.25) 0 1px, transparent 2px),
+                radial-gradient(circle at 88% 30%, rgba(255, 255, 255, 0.2) 0 1px, transparent 2px);
+            pointer-events: none;
+            z-index: 0;
         }
 
         #header {
             height: 60px;
+            flex-shrink: 0;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0 20px;
-            color: white;
+            padding: 0 16px;
             font-size: 20px;
             font-weight: bold;
+            background: rgba(0, 0, 0, 0.35);
+            position: relative;
+            z-index: 2;
+        }
+
+        #loot {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+            color: #ffd86b;
+            text-shadow: 0 0 12px rgba(255, 200, 60, 0.5);
+        }
+
+        #loot-icon {
+            font-size: 26px;
+            display: inline-block;
+            transform-origin: 50% 80%;
+        }
+
+        #loot.bump #loot-icon {
+            animation: bagBump 0.45s ease;
+        }
+
+        @keyframes bagBump {
+            0% { transform: scale(1) rotate(0deg); }
+            30% { transform: scale(1.45) rotate(-12deg); }
+            60% { transform: scale(1.15) rotate(8deg); }
+            100% { transform: scale(1) rotate(0deg); }
+        }
+
+        #timer {
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 18px;
+        }
+
+        /* おたから ならび */
+        #heist-bar {
+            flex-shrink: 0;
+            position: relative;
+            z-index: 2;
+            padding: 8px 8px 4px;
             background: rgba(0, 0, 0, 0.2);
+        }
+
+        #treasure-strip {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 2px;
+        }
+
+        .slot {
+            flex: 1;
+            max-width: 46px;
+            text-align: center;
+            font-size: 22px;
+            line-height: 1.5;
+            border-bottom: 3px solid rgba(255, 216, 107, 0.35);
+            transition: opacity 0.3s, transform 0.2s, filter 0.3s;
+        }
+
+        .slot.stolen {
+            opacity: 0.15;
+            filter: grayscale(1);
+        }
+
+        .slot.target {
+            transform: scale(1.35) translateY(-4px);
+            filter: drop-shadow(0 0 10px rgba(255, 216, 107, 0.9));
+            animation: targetGlow 0.9s ease-in-out infinite alternate;
+        }
+
+        @keyframes targetGlow {
+            0% { filter: drop-shadow(0 0 6px rgba(255, 216, 107, 0.6)); }
+            100% { filter: drop-shadow(0 0 16px rgba(255, 216, 107, 1)); }
+        }
+
+        #cat-line {
+            margin-top: 8px;
+            text-align: center;
+            font-size: min(4.2vw, 17px);
+            font-weight: bold;
+            color: #ffe9a8;
+            min-height: 24px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        #cat-line.got {
+            color: #6ff2a5;
+            animation: gotPop 0.4s ease;
+        }
+
+        #cat-line.miss {
+            color: #ff8a7a;
+        }
+
+        @keyframes gotPop {
+            0% { transform: scale(1); }
+            40% { transform: scale(1.18); }
+            100% { transform: scale(1); }
         }
 
         #staff-area {
             flex: 1;
+            min-height: 0;
             display: flex;
             justify-content: center;
             align-items: center;
             position: relative;
             padding-bottom: max(14vh, 120px);
+            z-index: 1;
         }
 
         #buttons-area {
@@ -60,22 +180,23 @@
             gap: 10px;
             padding: 12px 10px;
             padding-bottom: max(12px, env(safe-area-inset-bottom));
-            background: rgba(0, 0, 0, 0.2);
+            background: rgba(0, 0, 0, 0.45);
+            z-index: 3;
         }
 
         .answer-btn {
             flex: 1;
             max-width: min(18vw, 120px);
             height: min(14vh, 120px);
-            border: none;
+            border: 2px solid rgba(255, 216, 107, 0.5);
             border-radius: 12px;
             font-size: 28px;
             font-weight: bold;
-            color: white;
+            color: #ffe9a8;
             cursor: pointer;
-            background: rgba(255, 255, 255, 0.25);
+            background: rgba(80, 40, 130, 0.55);
             backdrop-filter: blur(10px);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
             transition: transform 0.1s, background 0.1s;
         }
 
@@ -85,6 +206,24 @@
                 height: 70px;
                 font-size: 24px;
                 padding: 0 30px;
+            }
+
+            #timer {
+                font-size: 22px;
+            }
+
+            #loot-icon {
+                font-size: 32px;
+            }
+
+            .slot {
+                max-width: 64px;
+                font-size: 32px;
+            }
+
+            #cat-line {
+                font-size: 24px;
+                min-height: 32px;
             }
 
             .answer-btn {
@@ -101,7 +240,7 @@
             }
 
             #start-title {
-                font-size: 48px;
+                font-size: 44px;
                 margin-bottom: 20px;
             }
 
@@ -116,11 +255,11 @@
             }
 
             #result-message {
-                font-size: 60px;
+                font-size: 56px;
             }
 
             #result-time {
-                font-size: 80px;
+                font-size: 72px;
             }
 
             #best-time {
@@ -130,16 +269,17 @@
 
         .answer-btn:active {
             transform: scale(0.95);
-            background: rgba(255, 255, 255, 0.4);
+            background: rgba(160, 90, 220, 0.7);
         }
 
         .answer-btn.correct {
-            background: rgba(46, 204, 113, 0.7);
+            background: rgba(46, 204, 113, 0.75);
+            color: white;
             animation: correctFlash 0.3s ease;
         }
 
         .answer-btn.wrong {
-            background: rgba(231, 76, 60, 0.7);
+            background: rgba(231, 76, 60, 0.75);
             animation: wrongShake 0.3s ease;
         }
 
@@ -157,6 +297,87 @@
             100% { transform: translateX(0); }
         }
 
+        /* ネコの ツメあと */
+        #claw {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 200px;
+            height: 200px;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 50;
+            display: none;
+        }
+
+        #claw.show {
+            display: block;
+        }
+
+        #claw i {
+            position: absolute;
+            top: 0;
+            width: 8px;
+            height: 200px;
+            border-radius: 4px;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0), #fff8d0, rgba(255, 255, 255, 0));
+            box-shadow: 0 0 18px rgba(255, 240, 150, 0.9);
+            opacity: 0;
+            transform-origin: 50% 50%;
+        }
+
+        #claw i:nth-child(1) { left: 60px; }
+        #claw i:nth-child(2) { left: 96px; }
+        #claw i:nth-child(3) { left: 132px; }
+
+        #claw.show i {
+            animation: clawSlash 0.4s ease-out forwards;
+        }
+
+        #claw.show i:nth-child(2) { animation-delay: 0.05s; }
+        #claw.show i:nth-child(3) { animation-delay: 0.1s; }
+
+        #claw.miss i {
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(180, 180, 190, 0.7), rgba(255, 255, 255, 0));
+            box-shadow: none;
+        }
+
+        @keyframes clawSlash {
+            0% { opacity: 0; transform: rotate(24deg) translate(-40px, 0) scaleY(0.4); }
+            30% { opacity: 1; transform: rotate(24deg) translate(0, 0) scaleY(1); }
+            100% { opacity: 0; transform: rotate(24deg) translate(40px, 0) scaleY(1); }
+        }
+
+        /* とんでいく おたから */
+        .fly-loot {
+            position: fixed;
+            font-size: 34px;
+            transform: translate(-50%, -50%);
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.6s;
+            z-index: 200;
+            pointer-events: none;
+        }
+
+        /* けいほう */
+        #alarm {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at center, rgba(255, 0, 0, 0) 40%, rgba(255, 30, 30, 0.55) 100%);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 60;
+        }
+
+        #alarm.flash {
+            animation: alarmFlash 0.45s ease;
+        }
+
+        @keyframes alarmFlash {
+            0% { opacity: 0; }
+            30% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
         #result-overlay {
             display: none;
             position: fixed;
@@ -164,11 +385,12 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, 0.82);
             justify-content: center;
             align-items: center;
             flex-direction: column;
             z-index: 100;
+            padding: 20px;
         }
 
         #result-overlay.visible {
@@ -176,19 +398,39 @@
         }
 
         #result-message {
-            font-size: 48px;
+            font-size: min(7.5vw, 40px);
+            white-space: nowrap;
             font-weight: bold;
             color: #f1c40f;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        #result-rank {
+            font-size: min(5.5vw, 26px);
+            white-space: nowrap;
+            font-weight: bold;
+            color: #ffe9a8;
+            margin-bottom: 16px;
             text-align: center;
         }
 
         #result-time {
-            font-size: 64px;
+            font-size: min(10vw, 56px);
+            white-space: nowrap;
             font-weight: bold;
             color: white;
-            margin-bottom: 40px;
+            margin-bottom: 10px;
             text-align: center;
+            text-shadow: 0 0 20px rgba(255, 200, 60, 0.6);
+        }
+
+        #result-detail {
+            font-size: min(4.2vw, 18px);
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 16px;
+            text-align: center;
+            line-height: 1.6;
         }
 
         #result-message.new-record {
@@ -202,10 +444,10 @@
         }
 
         #best-time {
-            font-size: 20px;
+            font-size: 18px;
             color: rgba(255, 255, 255, 0.7);
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 26px;
         }
 
         #best-time:empty {
@@ -217,42 +459,15 @@
             font-size: 24px;
             font-weight: bold;
             color: white;
-            background: rgba(52, 152, 219, 0.8);
-            border: none;
+            background: rgba(140, 60, 200, 0.85);
+            border: 2px solid rgba(255, 216, 107, 0.6);
             border-radius: 12px;
             cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
         }
 
         #retry-btn:active {
             transform: scale(0.95);
-        }
-
-        #correct-circle {
-            display: none;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 150px;
-            height: 150px;
-            border: 12px solid #e74c3c;
-            border-radius: 50%;
-            z-index: 50;
-            pointer-events: none;
-        }
-
-        #correct-circle.show {
-            display: block;
-            animation: circlePopIn 0.5s ease forwards;
-        }
-
-        @keyframes circlePopIn {
-            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
-            40% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
-            60% { opacity: 1; transform: translate(-50%, -50%) scale(0.95); }
-            80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-            100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
         }
 
         #start-overlay {
@@ -262,31 +477,44 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, 0.82);
             justify-content: center;
             align-items: center;
             flex-direction: column;
             z-index: 100;
+            padding: 20px;
         }
 
         #start-overlay.hidden {
             display: none;
         }
 
+        #start-cat {
+            font-size: 64px;
+            margin-bottom: 6px;
+            animation: catFloat 1.6s ease-in-out infinite alternate;
+        }
+
+        @keyframes catFloat {
+            0% { transform: translateY(0) rotate(-4deg); }
+            100% { transform: translateY(-10px) rotate(4deg); }
+        }
+
         #start-title {
-            font-size: 36px;
+            font-size: min(7.5vw, 30px);
             font-weight: bold;
-            color: white;
+            color: #ffd86b;
             margin-bottom: 15px;
             text-align: center;
+            text-shadow: 0 0 20px rgba(255, 200, 60, 0.5);
         }
 
         #start-description {
-            font-size: 18px;
-            color: rgba(255, 255, 255, 0.8);
+            font-size: min(4.2vw, 17px);
+            color: rgba(255, 255, 255, 0.85);
             margin-bottom: 30px;
             text-align: center;
-            line-height: 1.6;
+            line-height: 1.8;
         }
 
         #start-btn {
@@ -294,11 +522,11 @@
             font-size: 24px;
             font-weight: bold;
             color: white;
-            background: rgba(46, 204, 113, 0.8);
-            border: none;
+            background: rgba(140, 60, 200, 0.85);
+            border: 2px solid rgba(255, 216, 107, 0.6);
             border-radius: 12px;
             cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
         }
 
         #start-btn:active {
@@ -308,13 +536,18 @@
 </head>
 <body>
     <div id="header">
-        <span id="progress">1 / 10</span>
-        <span id="timer">0.00 <ruby>秒<rp>(</rp><rt>びょう</rt><rp>)</rp></ruby></span>
+        <span id="loot"><span id="loot-icon">💰</span><span id="loot-amount">0</span>えん</span>
+        <span id="timer">0.00 びょう</span>
+    </div>
+
+    <div id="heist-bar">
+        <div id="treasure-strip"></div>
+        <div id="cat-line">🐱 グヘヘ…</div>
     </div>
 
     <div id="staff-area">
         <canvas id="staff-canvas"></canvas>
-        <div id="correct-circle"></div>
+        <div id="claw"><i></i><i></i><i></i></div>
     </div>
 
     <div id="buttons-area">
@@ -325,21 +558,30 @@
         <button class="answer-btn" data-note="G">ソ</button>
     </div>
 
+    <div id="alarm"></div>
+
     <div id="start-overlay">
-        <div id="start-title"><ruby>譜読<rp>(</rp><rt>ふよ</rt><rp>)</rp></ruby>みタイムアタック</div>
+        <div id="start-cat">🐱</div>
+        <div id="start-title">かいとうネコの<br>おたから<ruby>大<rp>(</rp><rt>おお</rt><rp>)</rp></ruby>どろぼう</div>
         <div id="start-description">
-            <ruby>五線譜<rp>(</rp><rt>ごせんふ</rt><rp>)</rp></ruby>に<ruby>表示<rp>(</rp><rt>ひょうじ</rt><rp>)</rp></ruby>される<ruby>音符<rp>(</rp><rt>おんぷ</rt><rp>)</rp></ruby>の<br>
-            <ruby>音名<rp>(</rp><rt>おんめい</rt><rp>)</rp></ruby>をすばやく<ruby>答<rp>(</rp><rt>こた</rt><rp>)</rp></ruby>えよう!<br>
-            <ruby>全<rp>(</rp><rt>ぜん</rt><rp>)</rp></ruby>10<ruby>問<rp>(</rp><rt>もん</rt><rp>)</rp></ruby>
+            きみは よるの びじゅつかんに<br>
+            しのびこんだ かいとうネコ。<br>
+            きんこの ダイヤルに でてくる<br>
+            おんぷを ボタンで あてると<br>
+            おたからが 1つ てにはいる！<br>
+            まちがえると… なにも おこらない。<br>
+            10こ ぜんぶ いただいちゃえ！
         </div>
-        <button id="start-btn">スタート</button>
+        <button id="start-btn">しのびこむ</button>
     </div>
 
     <div id="result-overlay">
         <div id="result-message"></div>
         <div id="result-time"></div>
+        <div id="result-rank"></div>
+        <div id="result-detail"></div>
         <div id="best-time"></div>
-        <button id="retry-btn">もう<ruby>一度<rp>(</rp><rt>いちど</rt><rp>)</rp></ruby></button>
+        <button id="retry-btn">もういちど</button>
     </div>
 
     <script>
@@ -348,30 +590,92 @@
         const NOTES = ['C', 'D', 'E', 'F', 'G'];
         const NOTE_NAMES = { C: 'ド', D: 'レ', E: 'ミ', F: 'ファ', G: 'ソ' };
 
+        // ねらう おたから（あとにいくほど 高価）
+        const TREASURES = [
+            { icon: '🪙', name: 'きんか',           value: 1000 },
+            { icon: '🥄', name: 'ぎんの スプーン',   value: 3000 },
+            { icon: '⌚', name: 'きんの とけい',     value: 10000 },
+            { icon: '🏺', name: 'こだいの つぼ',     value: 30000 },
+            { icon: '🖼️', name: 'めいが',           value: 80000 },
+            { icon: '💍', name: 'ダイヤの ゆびわ',   value: 150000 },
+            { icon: '👑', name: 'おうかん',         value: 300000 },
+            { icon: '🗿', name: 'きんの ぞう',       value: 600000 },
+            { icon: '🔮', name: 'でんせつの たま',   value: 1200000 },
+            { icon: '💎', name: 'せかいいちの ダイヤ', value: 5000000 },
+        ];
+
+        const GOT_LINES = ['いただき！', 'グヘヘ…', 'よゆうだぜ！', 'かるい かるい', 'いただきだニャ！'];
+        const MISS_LINES = ['ちっ、はずれだ！', 'あぶねえ…', 'しっぱいだニャ', 'そっちじゃ ない！'];
+
+        // ランク（はやいほど おおもうけ）
+        const RANKS = [
+            { limit: 15, rank: 'S', title: 'でんせつの かいとう', bonus: 3 },
+            { limit: 22, rank: 'A', title: 'いちりゅう かいとう', bonus: 2 },
+            { limit: 32, rank: 'B', title: 'まあまあ かいとう',   bonus: 1.5 },
+            { limit: Infinity, rank: 'C', title: 'みならい かいとう', bonus: 1 },
+        ];
+
+        const BEST_TIME_KEY = 'noteReadingBestTime';
+
         let currentQuestion = 0;
         let currentNote = null;
         let startTime = null;
         let timerInterval = null;
         let gameActive = false;
-        let bestTime = null;
+        let answering = false;   // 正解の えんしゅつ中は うけつけない（れんだ たいさく）
+        let bestTime = loadBestTime();
+        let lootTotal = 0;
+        let lootShown = 0;
+        let lootAnimId = null;
+
+        function loadBestTime() {
+            try {
+                const saved = localStorage.getItem(BEST_TIME_KEY);
+                return saved === null ? null : parseFloat(saved);
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function saveBestTime(time) {
+            try {
+                localStorage.setItem(BEST_TIME_KEY, String(time));
+            } catch (e) {
+                /* localStorage が つかえなくても あそべる */
+            }
+        }
 
         // 効果音用AudioContext
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
-        function playCorrectSound() {
+        function playTone({ type = 'sine', from, to, start = 0, dur = 0.2, volume = 0.25 }) {
             const now = audioContext.currentTime;
-            // 明るい短い「ピン！」
             const osc = audioContext.createOscillator();
             const gain = audioContext.createGain();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(880, now);
-            osc.frequency.setValueAtTime(1320, now + 0.06);
-            gain.gain.setValueAtTime(0.3, now);
-            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+            osc.type = type;
+            osc.frequency.setValueAtTime(from, now + start);
+            if (to !== undefined) {
+                osc.frequency.exponentialRampToValueAtTime(to, now + start + dur);
+            }
+            gain.gain.setValueAtTime(0, now);
+            gain.gain.setValueAtTime(volume, now + start);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + start + dur);
             osc.connect(gain);
             gain.connect(audioContext.destination);
-            osc.start(now);
-            osc.stop(now + 0.25);
+            osc.start(now + start);
+            osc.stop(now + start + dur);
+        }
+
+        // おたからを うばった音「シャキーン！」
+        function playCorrectSound() {
+            playTone({ type: 'triangle', from: 700, to: 2400, dur: 0.12, volume: 0.28 });
+            playTone({ type: 'sine', from: 2637, start: 0.1, dur: 0.28, volume: 0.22 });
+            playTone({ type: 'sine', from: 3520, start: 0.16, dur: 0.24, volume: 0.16 });
+        }
+
+        // からぶり音「シュン…」＋けいほう
+        function playMissSound() {
+            playTone({ type: 'sawtooth', from: 220, to: 80, dur: 0.2, volume: 0.18 });
         }
 
         function playCompleteSound() {
@@ -443,6 +747,8 @@
             G: 2      // ソ: G4の線上（下から二番目の線）
         };
 
+        const STAFF_COLOR = '#ffd86b';
+
         // Canvas描画
         const canvas = document.getElementById('staff-canvas');
         const ctx = canvas.getContext('2d');
@@ -450,8 +756,10 @@
         function resizeCanvas() {
             const area = document.getElementById('staff-area');
             const dpr = window.devicePixelRatio || 1;
+            // ボタンぶんの padding をのぞいた、じっさいに見えるたかさ
+            const padBottom = parseFloat(getComputedStyle(area).paddingBottom) || 0;
             const width = Math.min(area.clientWidth * 0.9, 1000);
-            const height = area.clientHeight * 0.9;
+            const height = Math.max((area.clientHeight - padBottom) * 0.95, 120);
             canvas.style.width = width + 'px';
             canvas.style.height = height + 'px';
             canvas.width = width * dpr;
@@ -473,8 +781,31 @@
             const staffLeft = w * 0.1;
             const staffRight = w * 0.9;
 
+            // きんこの ダイヤルばん（背景パネル）
+            ctx.save();
+            ctx.fillStyle = 'rgba(255, 216, 107, 0.06)';
+            ctx.strokeStyle = 'rgba(255, 216, 107, 0.35)';
+            ctx.lineWidth = 2;
+            // 符幹（上）と加線（下）が はみ出さないだけの よゆうをとる
+            const padX = lineSpacing * 0.6;
+            const padTop = lineSpacing * 1.8;
+            const padBottom = lineSpacing * 1.6;
+            const panelX = staffLeft - padX;
+            const panelY = staffTop - padTop;
+            const panelW = (staffRight - staffLeft) + padX * 2;
+            const panelH = lineSpacing * 4 + padTop + padBottom;
+            ctx.beginPath();
+            if (typeof ctx.roundRect === 'function') {
+                ctx.roundRect(panelX, panelY, panelW, panelH, 10);
+            } else {
+                ctx.rect(panelX, panelY, panelW, panelH);
+            }
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
+
             // 五線を描画
-            ctx.strokeStyle = 'white';
+            ctx.strokeStyle = STAFF_COLOR;
             ctx.lineWidth = 2;
             for (let i = 0; i < 5; i++) {
                 const y = staffTop + i * lineSpacing;
@@ -487,7 +818,7 @@
             // ト音記号を描画（テキストで代用）
             const clefSize = lineSpacing * 5.5;
             ctx.font = `${clefSize}px serif`;
-            ctx.fillStyle = 'white';
+            ctx.fillStyle = STAFF_COLOR;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             const clefX = staffLeft + lineSpacing * 1.5;
@@ -502,7 +833,7 @@
             // notePos: -2 (C) ~ 2 (G)
             // 1単位 = lineSpacing / 2（半音階ではなく線-間の距離）
             const noteY = bottomLineY - notePos * (lineSpacing / 2);
-            const noteX = w * 0.55;
+            const noteX = w * 0.72; // ト音記号にかぶらない位置
 
             // 加線を描画（C4の場合）
             if (note === 'C') {
@@ -519,15 +850,19 @@
             const noteRadiusX = lineSpacing * 0.55;
             const noteRadiusY = lineSpacing * 0.4;
             ctx.save();
+            ctx.shadowColor = 'rgba(255, 216, 107, 0.8)';
+            ctx.shadowBlur = 14;
             ctx.translate(noteX, noteY);
             ctx.rotate(-0.2); // わずかに傾ける
             ctx.beginPath();
             ctx.ellipse(0, 0, noteRadiusX, noteRadiusY, 0, 0, Math.PI * 2);
-            ctx.fillStyle = 'white';
+            ctx.fillStyle = '#fff8d0';
             ctx.fill();
             ctx.restore();
 
             // 符幹（棒）
+            ctx.save();
+            ctx.strokeStyle = '#fff8d0';
             const stemHeight = lineSpacing * 3.5;
             const stemX = noteX + noteRadiusX * 0.9;
             ctx.beginPath();
@@ -535,13 +870,129 @@
             ctx.moveTo(stemX, noteY);
             ctx.lineTo(stemX, noteY - stemHeight);
             ctx.stroke();
+            ctx.restore();
             ctx.lineWidth = 2;
+        }
+
+        // おたから ならびの 表示
+        const strip = document.getElementById('treasure-strip');
+
+        function buildStrip() {
+            strip.innerHTML = '';
+            TREASURES.forEach((t, i) => {
+                const slot = document.createElement('div');
+                slot.className = 'slot';
+                slot.dataset.index = i;
+                slot.textContent = t.icon;
+                strip.appendChild(slot);
+            });
+        }
+
+        function currentTreasure() {
+            return TREASURES[Math.min(currentQuestion - 1, TREASURES.length - 1)];
+        }
+
+        function currentSlot() {
+            return strip.children[Math.min(currentQuestion - 1, TREASURES.length - 1)];
+        }
+
+        function highlightTarget() {
+            Array.from(strip.children).forEach((slot, i) => {
+                slot.classList.toggle('target', i === currentQuestion - 1);
+                slot.classList.toggle('stolen', i < currentQuestion - 1);
+            });
+        }
+
+        function setCatLine(text, mode) {
+            const el = document.getElementById('cat-line');
+            el.textContent = text;
+            el.classList.remove('got', 'miss');
+            if (mode) {
+                void el.offsetWidth;
+                el.classList.add(mode);
+            }
+        }
+
+        function showTargetLine() {
+            const t = currentTreasure();
+            setCatLine(`🐱 ねらいは ${t.icon} ${t.name}（${t.value.toLocaleString('ja-JP')}えん）`);
+        }
+
+        // ぬすんだ金額を なめらかに カウントアップ
+        function animateLoot(to) {
+            const from = lootShown;
+            const startAt = Date.now();
+            const dur = 400;
+            if (lootAnimId) cancelAnimationFrame(lootAnimId);
+            const step = () => {
+                const p = Math.min((Date.now() - startAt) / dur, 1);
+                lootShown = Math.round(from + (to - from) * (1 - Math.pow(1 - p, 3)));
+                document.getElementById('loot-amount').textContent = lootShown.toLocaleString('ja-JP');
+                if (p < 1) {
+                    lootAnimId = requestAnimationFrame(step);
+                } else {
+                    lootAnimId = null;
+                }
+            };
+            step();
+        }
+
+        // おたからが 袋へ とんでいく
+        function flyLoot(slotEl) {
+            const bag = document.getElementById('loot-icon');
+            const from = slotEl.getBoundingClientRect();
+            const to = bag.getBoundingClientRect();
+            const fly = document.createElement('div');
+            fly.className = 'fly-loot';
+            fly.textContent = slotEl.textContent;
+            fly.style.left = (from.left + from.width / 2) + 'px';
+            fly.style.top = (from.top + from.height / 2) + 'px';
+            document.body.appendChild(fly);
+            const dx = (to.left + to.width / 2) - (from.left + from.width / 2);
+            const dy = (to.top + to.height / 2) - (from.top + from.height / 2);
+            requestAnimationFrame(() => {
+                fly.style.transform = `translate(-50%, -50%) translate(${dx}px, ${dy}px) scale(0.35) rotate(540deg)`;
+                fly.style.opacity = '0.15';
+            });
+            setTimeout(() => fly.remove(), 700);
+
+            const lootEl = document.getElementById('loot');
+            lootEl.classList.remove('bump');
+            void lootEl.offsetWidth;
+            lootEl.classList.add('bump');
+        }
+
+        // ネコの ツメあと
+        function showClaw(missed) {
+            const claw = document.getElementById('claw');
+            claw.classList.remove('show', 'miss');
+            void claw.offsetWidth;
+            claw.classList.toggle('miss', !!missed);
+            claw.classList.add('show');
+            setTimeout(() => claw.classList.remove('show'), 500);
+        }
+
+        function flashAlarm() {
+            const alarm = document.getElementById('alarm');
+            alarm.classList.remove('flash');
+            void alarm.offsetWidth;
+            alarm.classList.add('flash');
+        }
+
+        function pick(list) {
+            return list[Math.floor(Math.random() * list.length)];
         }
 
         // ゲームロジック
         function startGame() {
             if (audioContext.state === 'suspended') audioContext.resume();
             currentQuestion = 0;
+            currentNote = null;
+            answering = false;
+            lootTotal = 0;
+            lootShown = 0;
+            document.getElementById('loot-amount').textContent = '0';
+            buildStrip();
             startTime = Date.now();
             gameActive = true;
             document.getElementById('start-overlay').classList.add('hidden');
@@ -551,8 +1002,10 @@
         }
 
         function nextQuestion() {
+            answering = false;
             currentQuestion++;
-            document.getElementById('progress').textContent = `${currentQuestion} / ${TOTAL_QUESTIONS}`;
+            highlightTarget();
+            showTargetLine();
 
             // ランダムに音を選ぶ（前回と同じ音は避ける）
             let nextNote;
@@ -572,58 +1025,81 @@
         function updateTimer() {
             if (!startTime) return;
             const elapsed = (Date.now() - startTime) / 1000;
-            document.getElementById('timer').innerHTML = `${elapsed.toFixed(2)} <ruby>秒<rp>(</rp><rt>びょう</rt><rp>)</rp></ruby>`;
-        }
-
-        function showCorrectCircle() {
-            const circle = document.getElementById('correct-circle');
-            circle.classList.remove('show');
-            // reflow を強制してアニメーションをリセット
-            void circle.offsetWidth;
-            circle.classList.add('show');
-            setTimeout(() => circle.classList.remove('show'), 500);
+            document.getElementById('timer').textContent = `${elapsed.toFixed(2)} びょう`;
         }
 
         function handleAnswer(selectedNote) {
-            if (!gameActive) return;
+            if (!gameActive || answering) return;
 
             const btn = document.querySelector(`.answer-btn[data-note="${selectedNote}"]`);
 
             if (selectedNote === currentNote) {
-                // 正解
+                // 正解 → おたからを 1つ いただく
+                answering = true;
                 btn.classList.add('correct');
-                showCorrectCircle();
                 document.querySelectorAll('.answer-btn').forEach(b => b.disabled = true);
+
+                const treasure = currentTreasure();
+                const slot = currentSlot();
+                showClaw(false);
+                flyLoot(slot);
+                slot.classList.remove('target');
+                slot.classList.add('stolen');
+                lootTotal += treasure.value;
+                animateLoot(lootTotal);
+                setCatLine(`🐱 ${pick(GOT_LINES)} ＋${treasure.value.toLocaleString('ja-JP')}えん`, 'got');
 
                 if (currentQuestion >= TOTAL_QUESTIONS) {
                     // ゲーム終了
                     gameActive = false;
                     clearInterval(timerInterval);
                     const elapsed = (Date.now() - startTime) / 1000;
-                    playCompleteSound();
-                    setTimeout(() => showResult(elapsed), 400);
+                    playCorrectSound();
+                    setTimeout(() => playCompleteSound(), 300);
+                    setTimeout(() => showResult(elapsed), 900);
                 } else {
                     playCorrectSound();
-                    setTimeout(() => nextQuestion(), 400);
+                    setTimeout(() => nextQuestion(), 600);
                 }
             } else {
-                // 不正解
+                // 不正解 → からぶり。なにも おこらない
                 btn.classList.add('wrong');
+                showClaw(true);
+                flashAlarm();
+                playMissSound();
+                setCatLine(`🐱 ${pick(MISS_LINES)}`, 'miss');
                 setTimeout(() => btn.classList.remove('wrong'), 300);
+                setTimeout(() => {
+                    if (gameActive) showTargetLine();
+                }, 900);
             }
+        }
+
+        function rankFor(elapsed) {
+            return RANKS.find(r => elapsed < r.limit);
         }
 
         function showResult(elapsed) {
             const isNewRecord = bestTime === null || elapsed < bestTime;
             if (isNewRecord) {
                 bestTime = elapsed;
+                saveBestTime(elapsed);
             }
 
+            const r = rankFor(elapsed);
+            const reward = Math.round(lootTotal * r.bonus);
+
             const msgEl = document.getElementById('result-message');
-            msgEl.textContent = isNewRecord ? 'NEW RECORD!' : 'CLEAR!';
+            msgEl.textContent = isNewRecord ? 'かいとう しんきろく！' : 'だいせいこう！';
             msgEl.classList.toggle('new-record', isNewRecord);
-            document.getElementById('result-time').innerHTML = `${elapsed.toFixed(2)} <ruby>秒<rp>(</rp><rt>びょう</rt><rp>)</rp></ruby>`;
-            document.getElementById('best-time').innerHTML = bestTime !== null ? `ベストタイム: ${bestTime.toFixed(2)} <ruby>秒<rp>(</rp><rt>びょう</rt><rp>)</rp></ruby>` : '';
+            document.getElementById('result-time').textContent = `${reward.toLocaleString('ja-JP')}えん`;
+            document.getElementById('result-rank').textContent = `ランク ${r.rank}　${r.title}`;
+            document.getElementById('result-detail').innerHTML =
+                `おたから ${TOTAL_QUESTIONS}こ ぜんぶ いただき！<br>` +
+                `${lootTotal.toLocaleString('ja-JP')}えん × はやわざボーナス ${r.bonus}<br>` +
+                `タイム ${elapsed.toFixed(2)} びょう`;
+            document.getElementById('best-time').textContent =
+                bestTime !== null ? `ベストタイム: ${bestTime.toFixed(2)} びょう` : '';
             document.getElementById('result-overlay').classList.add('visible');
         }
 
@@ -651,6 +1127,7 @@
         }, { passive: false });
 
         // 初期化
+        buildStrip();
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
     </script>
