@@ -615,35 +615,16 @@
             { limit: Infinity, rank: 'C', title: 'みならい かいとう', bonus: 1 },
         ];
 
-        const BEST_TIME_KEY = 'catHeistBestTime';
-
         let currentQuestion = 0;
         let currentNote = null;
         let startTime = null;
         let timerInterval = null;
         let gameActive = false;
         let answering = false;   // 正解の えんしゅつ中は うけつけない（れんだ たいさく）
-        let bestTime = loadBestTime();
+        let bestTime = null;   // ベストタイムは そのばかぎり（ページを とじると きえる）
         let lootTotal = 0;
         let lootShown = 0;
         let lootAnimId = null;
-
-        function loadBestTime() {
-            try {
-                const saved = localStorage.getItem(BEST_TIME_KEY);
-                return saved === null ? null : parseFloat(saved);
-            } catch (e) {
-                return null;
-            }
-        }
-
-        function saveBestTime(time) {
-            try {
-                localStorage.setItem(BEST_TIME_KEY, String(time));
-            } catch (e) {
-                /* localStorage が つかえなくても あそべる */
-            }
-        }
 
         // 効果音用AudioContext
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -1083,7 +1064,6 @@
             const isNewRecord = bestTime === null || elapsed < bestTime;
             if (isNewRecord) {
                 bestTime = elapsed;
-                saveBestTime(elapsed);
             }
 
             const r = rankFor(elapsed);
