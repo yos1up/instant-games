@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>わるガキの アリおとし</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        rt {
+            font-size: 0.4em;
+        }
+
+        /* ノートの方眼紙 */
+        body {
+            width: 100vw;
+            height: 100dvh;
+            overflow: hidden;
+            background-color: #fbf3dc;
+            background-image:
+                linear-gradient(rgba(120, 170, 210, 0.30) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(120, 170, 210, 0.30) 1px, transparent 1px);
+            background-size: 26px 26px, 26px 26px;
+            font-family: 'Arial', sans-serif;
+            touch-action: none;
+            display: flex;
+            flex-direction: column;
+            color: #2f3542;
+        }
+
+        /* ノートの とじあな */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            width: 8px;
+            background: repeating-linear-gradient(
+                to bottom,
+                rgba(200, 80, 70, 0.55) 0 18px,
+                rgba(0, 0, 0, 0) 18px 40px
+            );
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        #header {
+            height: 60px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #2f3542;
+            background: rgba(255, 255, 255, 0.55);
+            border-bottom: 3px solid #2f3542;
+            position: relative;
+            z-index: 2;
+        }
+
+        #brat-bar {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 8px 12px;
+            position: relative;
+            z-index: 2;
+        }
+
+        #brat-line {
+            font-size: 17px;
+            font-weight: bold;
+            color: #2f3542;
+            background: #fffdf2;
+            border: 3px solid #2f3542;
+            border-radius: 14px;
+            padding: 6px 16px;
+            box-shadow: 3px 3px 0 rgba(47, 53, 66, 0.35);
+            transform: rotate(-1deg);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 92vw;
+        }
+
+        #brat-line.got {
+            animation: bratPop 0.4s ease;
+            background: #fff2b8;
+        }
+
+        #brat-line.miss {
+            animation: bratShake 0.4s ease;
+            background: #e6e6e6;
+        }
+
+        @keyframes bratPop {
+            0% { transform: rotate(-1deg) scale(1); }
+            40% { transform: rotate(2deg) scale(1.12); }
+            100% { transform: rotate(-1deg) scale(1); }
+        }
+
+        @keyframes bratShake {
+            0%, 100% { transform: rotate(-1deg) translateX(0); }
+            25% { transform: rotate(-3deg) translateX(-6px); }
+            75% { transform: rotate(1deg) translateX(6px); }
+        }
+
+        /* 五線譜と アリの えんぶ台（描画は fx-canvas 側） */
+        #staff-area {
+            flex: 1;
+            position: relative;
+            padding-bottom: max(14vh, 120px);
+        }
+
+        /* 五線譜・歩くアリ・落ちるアリを ぜんぶ ここに描く */
+        #fx-canvas {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 40;
+        }
+
+        #buttons-area {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 10px;
+            padding-bottom: max(12px, env(safe-area-inset-bottom));
+            background: rgba(255, 255, 255, 0.75);
+            border-top: 3px solid #2f3542;
+            z-index: 30;
+        }
+
+        .answer-btn {
+            flex: 1;
+            max-width: min(18vw, 120px);
+            height: min(14vh, 120px);
+            border: 3px solid #2f3542;
+            border-radius: 12px;
+            font-size: 28px;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.3);
+            box-shadow: 4px 4px 0 rgba(47, 53, 66, 0.45);
+            transition: transform 0.1s, box-shadow 0.1s, background 0.1s;
+        }
+
+        .answer-btn[data-note="F"] { background: #e8524a; }
+        .answer-btn[data-note="G"] { background: #ef8b2c; }
+        .answer-btn[data-note="A"] { background: #c39a12; }
+        .answer-btn[data-note="B"] { background: #3fa95e; }
+        .answer-btn[data-note="C"] { background: #3b7fd4; }
+
+        /* タブレット向けレイアウト調整 */
+        @media (min-width: 600px) {
+            #header {
+                height: 70px;
+                font-size: 24px;
+                padding: 0 30px;
+            }
+
+            #brat-line {
+                font-size: 22px;
+                padding: 8px 22px;
+            }
+
+            .answer-btn {
+                max-width: 160px;
+                height: min(16vh, 160px);
+                font-size: 36px;
+                border-radius: 16px;
+            }
+
+            #buttons-area {
+                gap: 16px;
+                padding: 20px 20px;
+                padding-bottom: max(20px, env(safe-area-inset-bottom));
+            }
+
+            #start-title {
+                font-size: 44px;
+                margin-bottom: 20px;
+            }
+
+            #start-description {
+                font-size: 22px;
+                margin-bottom: 36px;
+            }
+
+            #start-btn, #retry-btn {
+                padding: 20px 50px;
+                font-size: 28px;
+            }
+
+            #result-message {
+                font-size: 52px;
+            }
+
+            #result-detail {
+                font-size: 26px;
+            }
+        }
+
+        .answer-btn:active {
+            transform: translate(3px, 3px);
+            box-shadow: 1px 1px 0 rgba(47, 53, 66, 0.45);
+        }
+
+        .answer-btn.correct {
+            background: #2ecc71;
+            animation: correctFlash 0.3s ease;
+        }
+
+        .answer-btn.wrong {
+            background: #7f8894;
+            animation: wrongShake 0.3s ease;
+        }
+
+        @keyframes correctFlash {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes wrongShake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            50% { transform: translateX(8px); }
+            75% { transform: translateX(-8px); }
+            100% { transform: translateX(0); }
+        }
+
+        /* オーバーレイ（スタート・けっか） */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(47, 53, 66, 0.6);
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 100;
+            padding: 20px;
+        }
+
+        #start-overlay {
+            display: flex;
+        }
+
+        #start-overlay.hidden {
+            display: none;
+        }
+
+        #result-overlay {
+            display: none;
+        }
+
+        #result-overlay.visible {
+            display: flex;
+        }
+
+        .paper-card {
+            background: #fffdf2;
+            border: 4px dashed #2f3542;
+            border-radius: 18px;
+            box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.35);
+            padding: 28px 26px;
+            transform: rotate(-1deg);
+            text-align: center;
+            max-width: 560px;
+        }
+
+        #start-brat {
+            font-size: 64px;
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+
+        #start-title {
+            font-size: 32px;
+            font-weight: bold;
+            color: #2f3542;
+            margin-bottom: 14px;
+            line-height: 1.3;
+        }
+
+        #start-description {
+            font-size: 17px;
+            color: #4b525f;
+            margin-bottom: 26px;
+            line-height: 1.7;
+        }
+
+        #start-btn, #retry-btn {
+            padding: 14px 38px;
+            font-size: 22px;
+            font-weight: bold;
+            color: white;
+            background: #e8524a;
+            border: 3px solid #2f3542;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 5px 5px 0 rgba(47, 53, 66, 0.5);
+        }
+
+        #start-btn:active, #retry-btn:active {
+            transform: translate(3px, 3px);
+            box-shadow: 2px 2px 0 rgba(47, 53, 66, 0.5);
+        }
+
+        #result-message {
+            font-size: 40px;
+            font-weight: bold;
+            color: #e8524a;
+            margin-bottom: 10px;
+            line-height: 1.2;
+        }
+
+        #result-ants {
+            font-size: 56px;
+            line-height: 1.2;
+            margin-bottom: 6px;
+            word-break: break-all;
+        }
+
+        #result-detail {
+            font-size: 20px;
+            font-weight: bold;
+            color: #2f3542;
+            margin-bottom: 24px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <span id="progress">1 / 10</span>
+        <span id="ant-count">🐜 おとした 0ひき</span>
+    </div>
+
+    <div id="brat-bar">
+        <div id="brat-line">😈 くっくっく…</div>
+    </div>
+
+    <div id="staff-area"></div>
+
+    <canvas id="fx-canvas"></canvas>
+
+    <div id="buttons-area">
+        <button class="answer-btn" data-note="F">ファ</button>
+        <button class="answer-btn" data-note="G">ソ</button>
+        <button class="answer-btn" data-note="A">ラ</button>
+        <button class="answer-btn" data-note="B">シ</button>
+        <button class="answer-btn" data-note="C">ド</button>
+    </div>
+
+    <div id="start-overlay" class="overlay">
+        <div class="paper-card">
+            <div id="start-brat">😈</div>
+            <div id="start-title">わるガキの<br>アリおとし</div>
+            <div id="start-description">
+                きみは いたずらずきの わるガキ。<br>
+                ごせんふの うえを アリが<br>
+                のんきに あるいて いる。<br>
+                おんぷの なまえを あてると<br>
+                ごせんふが きえて<br>
+                アリたちは まっさかさま！<br>
+                さあ 10かい ぜんぶ おとしてやれ。
+            </div>
+            <button id="start-btn">いたずら かいし</button>
+        </div>
+    </div>
+
+    <div id="result-overlay" class="overlay">
+        <div class="paper-card">
+            <div id="result-message"></div>
+            <div id="result-ants"></div>
+            <div id="result-detail"></div>
+            <button id="retry-btn">もういちど</button>
+        </div>
+    </div>
+
+    <script>
+        // ゲーム状態
+        const TOTAL_QUESTIONS = 10;
+        const NOTES = ['F', 'G', 'A', 'B', 'C'];
+        const NOTE_NAMES = { F: 'ファ', G: 'ソ', A: 'ラ', B: 'シ', C: 'ド' };
+
+        const STAFF_COLOR = '#2f3542';
+
+        // 落ちるときの さけびごえ
+        const SCREAM_TEXTS = [
+            'うわああああ',
+            'うわあああああ',
+            'うわあああああああ',
+            'うわぁあああああ',
+            'うわーーーっ',
+        ];
+
+        const GOT_LINES = ['ざまあみろ！', 'くっくっく…', 'おっこちろ！', 'つぎは どいつだ？', 'いい ながめだぜ'];
+        const MISS_LINES = ['あれ、ちがった', 'ちっ…', 'そっちじゃ ないか', 'アリに わらわれた'];
+
+        let currentQuestion = 0;
+        let currentNote = null;
+        let gameActive = false;
+        let answering = false;   // 落下の えんしゅつ中は うけつけない（れんだ たいさく）
+        let antsDropped = 0;
+
+        // 効果音用AudioContext
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+        // さけびごえが なんじゅうにも かさなっても われないように
+        const screamBus = audioContext.createGain();
+        screamBus.gain.value = 0.9;
+        const screamComp = audioContext.createDynamicsCompressor();
+        screamComp.threshold.value = -18;
+        screamComp.knee.value = 12;
+        screamComp.ratio.value = 6;
+        screamComp.attack.value = 0.004;
+        screamComp.release.value = 0.2;
+        screamBus.connect(screamComp);
+        screamComp.connect(audioContext.destination);
+
+        let activeScreams = 0;
+        const MAX_SCREAM_VOICES = 24;
+
+        // 「うわああああ」を 1つぶん 合成する。
+        // 止める処理は しないので、つぎの もんだいを すばやく せいかいすると
+        // まえの さけびごえの うえに あたらしい さけびごえが かさなる。
+        function playScream(delay) {
+            if (activeScreams >= MAX_SCREAM_VOICES) return;
+
+            const t0 = audioContext.currentTime + delay;
+            const dur = 1.1 + Math.random() * 0.5;
+            const base = 360 + Math.random() * 280;
+            // かさなるほど 1こあたりを 小さくして クリップを ふせぐ
+            const volume = 0.20 / (1 + activeScreams * 0.35);
+
+            activeScreams++;
+            setTimeout(() => {
+                activeScreams = Math.max(0, activeScreams - 1);
+            }, (delay + dur) * 1000);
+
+            const osc = audioContext.createOscillator();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(base, t0);
+            osc.frequency.setValueAtTime(base * 1.14, t0 + 0.08);
+            // 落ちながら 音が さがっていく（ドップラー風）
+            osc.frequency.exponentialRampToValueAtTime(base * 0.42, t0 + dur);
+
+            // こえの ふるえ
+            const vib = audioContext.createOscillator();
+            vib.type = 'sine';
+            vib.frequency.value = 9 + Math.random() * 6;
+            const vibGain = audioContext.createGain();
+            vibGain.gain.value = base * 0.07;
+            vib.connect(vibGain);
+            vibGain.connect(osc.frequency);
+
+            // 「あ」っぽい ひびき
+            const formant = audioContext.createBiquadFilter();
+            formant.type = 'bandpass';
+            formant.frequency.value = 850 + Math.random() * 550;
+            formant.Q.value = 2.5;
+
+            const gain = audioContext.createGain();
+            gain.gain.setValueAtTime(0.0001, t0);
+            gain.gain.linearRampToValueAtTime(volume, t0 + 0.05);
+            gain.gain.setValueAtTime(volume, t0 + dur * 0.6);
+            gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+
+            osc.connect(formant);
+            formant.connect(gain);
+            gain.connect(screamBus);
+
+            osc.start(t0);
+            osc.stop(t0 + dur + 0.05);
+            vib.start(t0);
+            vib.stop(t0 + dur + 0.05);
+        }
+
+        function playCorrectSound() {
+            const now = audioContext.currentTime;
+            // 明るい短い「ピン！」
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(880, now);
+            osc.frequency.setValueAtTime(1320, now + 0.06);
+            gain.gain.setValueAtTime(0.3, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            osc.start(now);
+            osc.stop(now + 0.25);
+        }
+
+        // からぶり音「シュン…」
+        function playMissSound() {
+            const now = audioContext.currentTime;
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(220, now);
+            osc.frequency.exponentialRampToValueAtTime(80, now + 0.2);
+            gain.gain.setValueAtTime(0.18, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            osc.start(now);
+            osc.stop(now + 0.22);
+        }
+
+        function playCompleteSound() {
+            const now = audioContext.currentTime;
+            // メロディー: ド,ド,ッ,レ,ッ,レ,ッ,ソーーーー (各音をコードに)
+            const melody = [
+                // ファ+ラ+ド (F4+A4+C5)
+                { freq: 349.23, time: 0.0, dur: 0.1 },
+                { freq: 440.00, time: 0.0, dur: 0.1 },
+                { freq: 523.25, time: 0.0, dur: 0.1 },
+                // ファ+ラ+ド (F4+A4+C5)
+                { freq: 349.23, time: 0.1, dur: 0.1 },
+                { freq: 440.00, time: 0.1, dur: 0.1 },
+                { freq: 523.25, time: 0.1, dur: 0.1 },
+                                                           // ッ (休符)
+                // ソ+シ+レ (G4+B4+D5)
+                { freq: 392.00, time: 0.3, dur: 0.1 },
+                { freq: 493.88, time: 0.3, dur: 0.1 },
+                { freq: 587.33, time: 0.3, dur: 0.1 },
+                                                           // ッ (休符)
+                // ソ+シ+レ (G4+B4+D5)
+                { freq: 392.00, time: 0.5, dur: 0.1 },
+                { freq: 493.88, time: 0.5, dur: 0.1 },
+                { freq: 587.33, time: 0.5, dur: 0.1 },
+                                                           // ッ (休符)
+                // ド+ミ+ソ (C5+E5+G5)
+                { freq: 523.25, time: 0.7, dur: 1.0 },
+                { freq: 659.25, time: 0.7, dur: 1.0 },
+                { freq: 783.99, time: 0.7, dur: 1.0 },
+            ];
+            melody.forEach(({ freq, time, dur }) => {
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, now);
+                const start = now + time;
+                gain.gain.setValueAtTime(0, now);
+                gain.gain.setValueAtTime(0.2, start);
+                gain.gain.setValueAtTime(0.2, start + dur - 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.01, start + dur);
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                osc.start(start);
+                osc.stop(start + dur);
+            });
+        }
+
+        // 五線譜上の音符のY位置（ヘ音記号 / 左手）
+        // 五線の線は下からG2, B2, D3, F3, A3
+        // 一番下の線(G2)を 0、線と間の あいだを 1単位 とすると:
+        //   G2 = 0 (一番下の線)
+        //   A2 = 1
+        //   B2 = 2 (下から二番目の線)
+        //   C3 = 3
+        //   D3 = 4 (真ん中の線)
+        //   E3 = 5
+        //   F3 = 6 (上から二番目の線)
+        //   G3 = 7
+        //   A3 = 8 (一番上の線)
+        //   B3 = 9
+        //   C4 = 10 (まんなかのド。一番上の線より2段上 → 加線が必要)
+        // ※ 上が正方向ではなく、描画上は下が正方向なので反転する
+
+        const NOTE_POSITIONS = {
+            F: 6,     // ファ(F3): 上から二番目の線上
+            G: 7,     // ソ(G3): F3とA3の間
+            A: 8,     // ラ(A3): 一番上の線上
+            B: 9,     // シ(B3): 一番上の線の1段上（間）
+            C: 10     // ド(C4/まんなかのド): 加線1本（A3の線から2段上）
+        };
+
+        // Canvas（画面ぜんたい）
+        // 五線譜・歩くアリ・落ちるアリを 1枚の canvas に描く。
+        // こうすると (1) アリを線の上・音符の下に はさんで描ける
+        //           (2) 落ちるアリを 画面の下まで 描ける
+        const canvas = document.getElementById('fx-canvas');
+        const ctx = canvas.getContext('2d');
+
+        // 五線譜の おき場所（画面ざひょう）と 大きさ
+        let geom = null;
+
+        function computeGeom() {
+            const area = document.getElementById('staff-area');
+            const rect = area.getBoundingClientRect();
+            const style = window.getComputedStyle(area);
+            // ボタンのぶんの padding は のぞいて、五線譜は そのうえに おく
+            const padBottom = parseFloat(style.paddingBottom) || 0;
+            const boxH = Math.max(rect.height - padBottom, 80);
+
+            const w = Math.min(rect.width * 0.9, 1000);
+            const h = boxH * 0.9;
+            const lineSpacing = Math.min(h * 0.1, 50);
+
+            geom = {
+                originX: rect.left + (rect.width - w) / 2,
+                originY: rect.top + (boxH - h) / 2,
+                w: w,
+                h: h,
+                staffTop: h * 0.25,
+                lineSpacing: lineSpacing,
+                staffLeft: w * 0.1,
+                staffRight: w * 0.9,
+                antSize: Math.max(13, Math.min(lineSpacing * 0.8, w * 0.075))
+            };
+        }
+
+        function resizeCanvas() {
+            const dpr = window.devicePixelRatio || 1;
+            canvas.style.width = window.innerWidth + 'px';
+            canvas.style.height = window.innerHeight + 'px';
+            canvas.width = Math.round(window.innerWidth * dpr);
+            canvas.height = Math.round(window.innerHeight * dpr);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            computeGeom();
+            clampWalkers();
+        }
+
+        // 五線（と ヘ音記号）だけを描く
+        function drawStaffBase(alpha) {
+            const g = geom;
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.translate(g.originX, g.originY);
+
+            // 五線を描画
+            ctx.strokeStyle = STAFF_COLOR;
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 5; i++) {
+                const y = g.staffTop + i * g.lineSpacing;
+                ctx.beginPath();
+                ctx.moveTo(g.staffLeft, y);
+                ctx.lineTo(g.staffRight, y);
+                ctx.stroke();
+            }
+
+            // ヘ音記号を描画（テキストで代用）
+            // ヘ音記号は 一番上の線から 下に3段ぶんの 高さで、2つの点が
+            // ファ(F3 = 上から2本目の線)を はさむ かたち。
+            // グリフの 大きさは フォントによって ちがうので、
+            // じっさいの 高さを はかって 五線に あわせる。
+            const CLEF_GLYPH = '\u{1D122}';
+            const probeSize = g.lineSpacing * 5;
+            ctx.font = `${probeSize}px serif`;
+            const cm = ctx.measureText(CLEF_GLYPH);
+            const asc = cm.actualBoundingBoxAscent;
+            const desc = cm.actualBoundingBoxDescent;
+            let clefSize, clefAscent;   // clefAscent: グリフの上はしから きじゅん点までの きょり
+            if (asc > 0 && desc > 0) {
+                clefSize = probeSize * (g.lineSpacing * 3) / (asc + desc);
+                clefAscent = asc * (clefSize / probeSize);
+            } else {
+                // 高さを はかれない ときの めやす
+                clefSize = g.lineSpacing * 4.9;
+                clefAscent = clefSize * 0.5;
+            }
+            ctx.font = `${clefSize}px serif`;
+            ctx.fillStyle = STAFF_COLOR;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const clefX = g.staffLeft + g.lineSpacing * 1.5;
+            const clefY = g.staffTop + clefAscent;
+            ctx.fillText(CLEF_GLYPH, clefX, clefY);
+
+            ctx.restore();
+        }
+
+        // 音符だけを描く（アリより あとに描くので アリに かくれない）
+        function drawNote(note, alpha) {
+            const g = geom;
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.translate(g.originX, g.originY);
+
+            // 音符の位置を計算
+            // G2が一番下の線（staffTop + 4 * lineSpacing）
+            // 上方向が正なので、posが大きいほどY座標は小さい
+            const bottomLineY = g.staffTop + 4 * g.lineSpacing;
+            const notePos = NOTE_POSITIONS[note];
+            // notePos: 6 (F3) ~ 10 (C4)
+            // 1単位 = lineSpacing / 2（半音階ではなく線-間の距離）
+            const noteY = bottomLineY - notePos * (g.lineSpacing / 2);
+            const noteX = g.w * 0.72; // ヘ音記号にかぶらない位置
+
+            ctx.strokeStyle = STAFF_COLOR;
+            ctx.lineWidth = 2;
+
+            // 加線を描画（C4の場合）
+            if (note === 'C') {
+                // C4は加線1本必要（A3の上2段 = 1本の加線）
+                const ledgerY = bottomLineY - 5 * g.lineSpacing;
+                ctx.beginPath();
+                ctx.moveTo(noteX - g.lineSpacing * 1.2, ledgerY);
+                ctx.lineTo(noteX + g.lineSpacing * 1.2, ledgerY);
+                ctx.stroke();
+            }
+
+            // 四分音符を描画
+            // 符頭（塗りつぶした楕円）
+            const noteRadiusX = g.lineSpacing * 0.55;
+            const noteRadiusY = g.lineSpacing * 0.4;
+            ctx.save();
+            ctx.translate(noteX, noteY);
+            ctx.rotate(-0.2); // わずかに傾ける
+            // アリが かさなっても 音符が よめるように ふちどりする
+            ctx.beginPath();
+            ctx.ellipse(0, 0, noteRadiusX + 2.5, noteRadiusY + 2.5, 0, 0, Math.PI * 2);
+            ctx.fillStyle = '#fbf3dc';
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(0, 0, noteRadiusX, noteRadiusY, 0, 0, Math.PI * 2);
+            ctx.fillStyle = STAFF_COLOR;
+            ctx.fill();
+            ctx.restore();
+
+            // 符幹（棒）
+            // ファ(F3)〜ド(C4)は まんなかの線(D3)より 上なので、
+            // 楽譜の きまりどおり ぼうは 下むき（符頭の 左がわ）に する
+            const stemHeight = g.lineSpacing * 3.5;
+            const stemX = noteX - noteRadiusX * 0.9;
+            ctx.beginPath();
+            ctx.lineWidth = 4.5;
+            ctx.strokeStyle = '#fbf3dc';
+            ctx.moveTo(stemX, noteY);
+            ctx.lineTo(stemX, noteY + stemHeight);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.lineWidth = 2.5;
+            ctx.strokeStyle = STAFF_COLOR;
+            ctx.moveTo(stemX, noteY);
+            ctx.lineTo(stemX, noteY + stemHeight);
+            ctx.stroke();
+            ctx.lineWidth = 2;
+
+            ctx.restore();
+        }
+
+        // ===== アリ =====
+        // walkers: 五線の上を 行ったり来たり している アリ（n問目なら n匹）
+        // fallers: せいかいで まっさかさまに 落ちていく アリ
+        let walkers = [];
+        let fallers = [];
+
+        // 五線譜の フェードアウト（せいかい と 同時に 消える）
+        const STAFF_FADE_SEC = 0.2;
+        let staffAlpha = 0;
+        let staffFading = false;
+
+        const GRAVITY = 1500;   // px/s^2
+
+        function lineY(lineIndex) {
+            return geom.staffTop + lineIndex * geom.lineSpacing;
+        }
+
+        function walkRange() {
+            const half = geom.antSize / 2;
+            // ヘ音記号の うえには のらないように、そのぶん 右から あるかせる
+            const clefRoom = Math.min(geom.lineSpacing * 3, (geom.staffRight - geom.staffLeft) * 0.28);
+            return {
+                min: geom.staffLeft + clefRoom + half,
+                max: geom.staffRight - half
+            };
+        }
+
+        function spawnWalkers(count) {
+            const range = walkRange();
+            const slot = (range.max - range.min) / count;
+            walkers = [];
+            for (let i = 0; i < count; i++) {
+                walkers.push({
+                    line: i % 5,                                   // 上から なんぼんめの線を あるくか
+                    // かたまらないように 五線の うえに ちらして おく
+                    x: range.min + slot * (i + 0.2 + Math.random() * 0.6),
+                    dir: Math.random() < 0.5 ? -1 : 1,
+                    speed: 38 + Math.random() * 42,                // px/s
+                    bob: Math.random() * Math.PI * 2
+                });
+            }
+        }
+
+        function clampWalkers() {
+            if (!geom) return;
+            const range = walkRange();
+            walkers.forEach(a => {
+                a.x = Math.min(Math.max(a.x, range.min), range.max);
+            });
+        }
+
+        // 五線譜から 落ちないように 端で おりかえす
+        function updateWalkers(dt) {
+            const range = walkRange();
+            walkers.forEach(a => {
+                a.x += a.dir * a.speed * dt;
+                if (a.x <= range.min) {
+                    a.x = range.min;
+                    a.dir = 1;
+                } else if (a.x >= range.max) {
+                    a.x = range.max;
+                    a.dir = -1;
+                }
+                a.bob += dt * 14;
+            });
+        }
+
+        function drawAnt(x, y, size, dir, rotation) {
+            ctx.save();
+            ctx.translate(x, y);
+            if (rotation) ctx.rotate(rotation);
+            if (dir < 0) ctx.scale(-1, 1);
+            ctx.font = `${size}px serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🐜', 0, 0);
+            ctx.restore();
+        }
+
+        function drawWalkers() {
+            const g = geom;
+            ctx.save();
+            ctx.translate(g.originX, g.originY);
+            walkers.forEach(a => {
+                // 足が 線の上に のるように 少し うえへ
+                const y = lineY(a.line) - g.antSize * 0.28 + Math.sin(a.bob) * 1.5;
+                drawAnt(a.x, y, g.antSize, a.dir, 0);
+            });
+            ctx.restore();
+        }
+
+        // 歩いていた アリを そのまま 落下に きりかえる
+        function dropWalkers() {
+            const g = geom;
+            walkers.forEach((a, i) => {
+                const y = lineY(a.line) - g.antSize * 0.28;
+                fallers.push({
+                    x: g.originX + a.x,
+                    y: g.originY + y,
+                    vx: (Math.random() - 0.5) * 110,
+                    vy: -70 - Math.random() * 70,          // いちど つんのめってから 落ちる
+                    rot: 0,
+                    rotV: (Math.random() - 0.5) * 7,
+                    size: g.antSize,
+                    text: SCREAM_TEXTS[Math.floor(Math.random() * SCREAM_TEXTS.length)],
+                    textSide: Math.random() < 0.5 ? -1 : 1,
+                    wobble: Math.random() * Math.PI * 2,
+                    age: 0
+                });
+                // わずかに ずらして 鳴らすと 「たくさんの さけびごえ」に きこえる
+                playScream(i * 0.055);
+            });
+            antsDropped += walkers.length;
+            updateAntCount();
+            walkers = [];
+        }
+
+        function updateFallers(dt) {
+            const limit = window.innerHeight + 120;
+            for (let i = fallers.length - 1; i >= 0; i--) {
+                const f = fallers[i];
+                f.vy += GRAVITY * dt;
+                f.x += f.vx * dt;
+                f.y += f.vy * dt;
+                f.rot += f.rotV * dt;
+                f.wobble += dt * 18;
+                f.age += dt;
+                if (f.y > limit) fallers.splice(i, 1);
+            }
+        }
+
+        function drawFallers() {
+            fallers.forEach(f => {
+                // 「うわああああ」の さけびごえ
+                const fontSize = Math.max(13, f.size * 0.72);
+                const ty = f.y - f.size * 0.85;
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, 1 - f.age * 0.5);
+                ctx.font = `bold ${fontSize}px sans-serif`;
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'middle';
+                // 画面の そとに はみ出して 読めなくならないように おさめる
+                const textWidth = ctx.measureText(f.text).width;
+                const rawX = f.textSide < 0
+                    ? f.x - f.size * 0.7 - textWidth
+                    : f.x + f.size * 0.7;
+                const tx = Math.min(
+                    Math.max(rawX + Math.sin(f.wobble) * 3, 4),
+                    Math.max(window.innerWidth - textWidth - 4, 4)
+                );
+                ctx.lineWidth = 4;
+                ctx.strokeStyle = '#fffdf2';
+                ctx.strokeText(f.text, tx, ty);
+                ctx.fillStyle = '#e8524a';
+                ctx.fillText(f.text, tx, ty);
+                ctx.restore();
+
+                drawAnt(f.x, f.y, f.size, 1, f.rot);
+            });
+        }
+
+        // ===== 描画ループ =====
+        let lastFrame = performance.now();
+
+        function frame(now) {
+            const dt = Math.min((now - lastFrame) / 1000, 0.05);
+            lastFrame = now;
+
+            if (staffFading) {
+                staffAlpha = Math.max(0, staffAlpha - dt / STAFF_FADE_SEC);
+                if (staffAlpha === 0) staffFading = false;
+            }
+            updateWalkers(dt);
+            updateFallers(dt);
+
+            ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+            if (currentNote && staffAlpha > 0) {
+                drawStaffBase(staffAlpha);   // 五線は いちばん下
+                drawWalkers();               // アリは 線の上を あるく
+                drawNote(currentNote, staffAlpha);   // 音符は アリより 手前（かくれない）
+            }
+            drawFallers();                   // 落ちるアリは 画面の いちばん手前
+
+            requestAnimationFrame(frame);
+        }
+
+        // ===== ひょうじ =====
+        function updateAntCount() {
+            document.getElementById('ant-count').textContent = `🐜 おとした ${antsDropped}ひき`;
+        }
+
+        function setBratLine(text, mode) {
+            const el = document.getElementById('brat-line');
+            el.textContent = text;
+            el.classList.remove('got', 'miss');
+            if (mode) {
+                void el.offsetWidth;
+                el.classList.add(mode);
+            }
+        }
+
+        function showTargetLine() {
+            const n = walkers.length;
+            setBratLine(`😈 アリが ${n}ひき あるいてる…`);
+        }
+
+        function pick(list) {
+            return list[Math.floor(Math.random() * list.length)];
+        }
+
+        // ===== ゲームロジック =====
+        function startGame() {
+            if (audioContext.state === 'suspended') audioContext.resume();
+            currentQuestion = 0;
+            currentNote = null;
+            answering = false;
+            antsDropped = 0;
+            walkers = [];
+            fallers = [];
+            updateAntCount();
+            gameActive = true;
+            document.getElementById('start-overlay').classList.add('hidden');
+            document.getElementById('result-overlay').classList.remove('visible');
+            nextQuestion();
+        }
+
+        function nextQuestion() {
+            answering = false;
+            currentQuestion++;
+            document.getElementById('progress').textContent = `${currentQuestion} / ${TOTAL_QUESTIONS}`;
+
+            // ランダムに音を選ぶ（前回と同じ音は避ける）
+            let nextNote;
+            do {
+                nextNote = NOTES[Math.floor(Math.random() * NOTES.length)];
+            } while (nextNote === currentNote);
+            currentNote = nextNote;
+
+            // n問目には n匹
+            spawnWalkers(currentQuestion);
+            staffAlpha = 1;
+            staffFading = false;
+            showTargetLine();
+
+            // ボタンの状態をリセット
+            document.querySelectorAll('.answer-btn').forEach(btn => {
+                btn.classList.remove('correct', 'wrong');
+                btn.disabled = false;
+            });
+        }
+
+        function handleAnswer(selectedNote) {
+            if (!gameActive || answering) return;
+
+            const btn = document.querySelector(`.answer-btn[data-note="${selectedNote}"]`);
+
+            if (selectedNote === currentNote) {
+                // 正解 → 五線譜が消えると同時に アリが 落ちる
+                answering = true;
+                btn.classList.add('correct');
+                document.querySelectorAll('.answer-btn').forEach(b => b.disabled = true);
+
+                const dropped = walkers.length;
+                staffFading = true;
+                dropWalkers();
+                setBratLine(`😈 ${pick(GOT_LINES)} アリ ${dropped}ひき`, 'got');
+
+                if (currentQuestion >= TOTAL_QUESTIONS) {
+                    // ゲーム終了
+                    gameActive = false;
+                    playCorrectSound();
+                    setTimeout(() => playCompleteSound(), 300);
+                    // さいごの 10匹が 落ちきるまで けっかは まつ
+                    setTimeout(() => showResult(), 1400);
+                } else {
+                    playCorrectSound();
+                    setTimeout(() => nextQuestion(), 400);
+                }
+            } else {
+                // 不正解 → なにも おこらない（アリは あるきつづける）
+                btn.classList.add('wrong');
+                playMissSound();
+                setBratLine(`😈 ${pick(MISS_LINES)}`, 'miss');
+                setTimeout(() => btn.classList.remove('wrong'), 300);
+                setTimeout(() => {
+                    if (gameActive) showTargetLine();
+                }, 900);
+            }
+        }
+
+        function showResult() {
+            const total = TOTAL_QUESTIONS * (TOTAL_QUESTIONS + 1) / 2;
+            document.getElementById('result-message').textContent = 'ぜんぶ おとした！';
+            document.getElementById('result-ants').textContent = '🐜'.repeat(10);
+            document.getElementById('result-detail').innerHTML =
+                `アリ ${antsDropped}ひき、まっさかさま。<br>` +
+                (antsDropped >= total ? 'かんぜんな いたずら せいこう！' : 'なかなかの いたずらっぷり。');
+            document.getElementById('result-overlay').classList.add('visible');
+        }
+
+        // イベント設定
+        document.querySelectorAll('.answer-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                handleAnswer(btn.dataset.note);
+            });
+            btn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                handleAnswer(btn.dataset.note);
+            }, { passive: false });
+        });
+
+        document.getElementById('start-btn').addEventListener('click', startGame);
+        document.getElementById('start-btn').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            startGame();
+        }, { passive: false });
+
+        document.getElementById('retry-btn').addEventListener('click', startGame);
+        document.getElementById('retry-btn').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            startGame();
+        }, { passive: false });
+
+        // 初期化
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        requestAnimationFrame(frame);
+    </script>
+</body>
+</html>
