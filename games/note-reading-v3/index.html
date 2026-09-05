@@ -159,11 +159,37 @@
             transition: transform 0.1s, box-shadow 0.1s, background 0.1s;
         }
 
-        .answer-btn[data-note="C"] { background: #e8524a; }
-        .answer-btn[data-note="D"] { background: #ef8b2c; }
-        .answer-btn[data-note="E"] { background: #c39a12; }
-        .answer-btn[data-note="F"] { background: #3fa95e; }
-        .answer-btn[data-note="G"] { background: #3b7fd4; }
+        /* ===== 音名と 色の たいおう（ドから 虹の じゅんばん）=====
+           Boomwhackers / Chroma-Notes と おなじ かんがえかたで、
+           ド=赤 から 音が 上がるほど 虹の じゅんに 色を わりあてる。
+           https://en.wikipedia.org/wiki/Talk:Boomwhacker に かんがえかたの もとが ある
+           （メーカーが 出している 正式な hex は ないので、色あいは ここで きめている）。
+
+           たいせつなのは 色を「ボタンの ばしょ」ではなく「音の 高さ」に
+           むすびつけて いること。v3 と v4 で 出だしの 音は ちがうけれど、
+           おなじ音は かならず おなじ色に なる（ファ も ソ も ド も）。
+           なので 5つしか つかわない ゲームでも 7つ ぜんぶ 書いておく。
+
+           明るさは 2つの ことを 考えて きめている:
+           (1) ボタンの 文字が よめること（うすい色の ボタンだけ すみ文字にする）
+           (2) 色の 見わけが つきにくい 人にも わかること。
+               赤〜緑 は まとめて 黄いろっぽく、青〜紫 は まとめて 青っぽく
+               見えるので、その かたまりの 中で 明るさに 差を つけてある。 */
+        .answer-btn[data-note="C"] { background: #d92b1f; }   /* ド   あか */
+        .answer-btn[data-note="D"] { background: #e8730c; }   /* レ   だいだい */
+        .answer-btn[data-note="E"] { background: #f0bc1a; }   /* ミ   きいろ */
+        .answer-btn[data-note="F"] { background: #1d7a3e; }   /* ファ みどり */
+        .answer-btn[data-note="G"] { background: #1a56ad; }   /* ソ   あお */
+        .answer-btn[data-note="A"] { background: #8a5fd6; }   /* ラ   すみれ */
+        .answer-btn[data-note="B"] { background: #e57cc8; }   /* シ   あかむらさき */
+
+        /* うすい色の ボタンは、白文字だと よめないので すみ文字に する */
+        .answer-btn[data-note="D"],
+        .answer-btn[data-note="E"],
+        .answer-btn[data-note="B"] {
+            color: #2f3542;
+            text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.45);
+        }
 
         /* タブレット向けレイアウト調整 */
         @media (min-width: 600px) {
@@ -221,11 +247,16 @@
         }
 
         .answer-btn.correct {
+            /* どの音の ボタンでも おなじ みどりに なるので、文字色も ここで そろえる */
+            color: #2f3542;
+            text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.45);
             background: #2ecc71;
             animation: correctFlash 0.3s ease;
         }
 
         .answer-btn.wrong {
+            color: white;
+            text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.3);
             background: #7f8894;
             animation: wrongShake 0.3s ease;
         }
