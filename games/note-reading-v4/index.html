@@ -471,6 +471,16 @@
         let activeScreams = 0;
         const MAX_SCREAM_VOICES = 24;
 
+        // ミスなしで れんぞく せいかい するほど、さけびごえは 高くなって いく。
+        // まちがえた ボタンを おしたら もとの 高さに もどる。
+        const SCREAM_PITCH_STEP = 1.13;   // 1れんさ ごとの ばいりつ（ぜんおん ぐらい）
+        const SCREAM_PITCH_MAX = 3.0;     // 上限は 1オクターブ半 上（10もん ノーミスで ちょうど ここ）
+        let screamStreak = 0;             // ミスなしで つづけて せいかい した かず
+
+        function screamPitchRatio() {
+            return Math.min(SCREAM_PITCH_MAX, Math.pow(SCREAM_PITCH_STEP, screamStreak));
+        }
+
         // 「うわああああ」を 1つぶん 合成する。
         // 止める処理は しないので、つぎの もんだいを すばやく せいかいすると
         // まえの さけびごえの うえに あたらしい さけびごえが かさなる。
@@ -479,7 +489,8 @@
 
             const t0 = audioContext.currentTime + delay;
             const dur = 1.1 + Math.random() * 0.5;
-            const base = 360 + Math.random() * 280;
+            // 1こずつの ばらつきは のこしたまま、れんさぶんだけ ぜんたいを 上に ずらす
+            const base = (360 + Math.random() * 280) * screamPitchRatio();
             // かさなるほど 1こあたりを 小さくして クリップを ふせぐ
             const volume = 0.20 / (1 + activeScreams * 0.35);
 
@@ -504,10 +515,13 @@
             vib.connect(vibGain);
             vibGain.connect(osc.frequency);
 
-            // 「あ」っぽい ひびき
+            // 「あ」っぽい ひびき。
+            // 高い こえに なるほど フィルタも すこし 上に ずらす。
+            // そうしないと 基音が バンドから はずれて、いちばん 高い さけびごえだけ
+            // ほそく 小さく なってしまう（＝せっかくの こうかが きこえない）。
             const formant = audioContext.createBiquadFilter();
             formant.type = 'bandpass';
-            formant.frequency.value = 850 + Math.random() * 550;
+            formant.frequency.value = (850 + Math.random() * 550) * Math.sqrt(screamPitchRatio());
             formant.Q.value = 2.5;
 
             const gain = audioContext.createGain();
@@ -1012,6 +1026,7 @@
             currentNote = null;
             answering = false;
             antsDropped = 0;
+            screamStreak = 0;
             walkers = [];
             fallers = [];
             updateAntCount();
@@ -1060,6 +1075,9 @@
                 const dropped = walkers.length;
                 staffFading = true;
                 dropWalkers();
+                // この もんだいの さけびごえを 鳴らした あとに あげる →
+                // つぎの もんだいの アリから 高く なる
+                screamStreak++;
                 setBratLine(`😈 ${pick(GOT_LINES)} アリ ${dropped}ひき`, 'got');
 
                 if (currentQuestion >= TOTAL_QUESTIONS) {
@@ -1075,6 +1093,8 @@
                 }
             } else {
                 // 不正解 → なにも おこらない（アリは あるきつづける）
+                // ただし さけびごえの 高さは もとに もどる
+                screamStreak = 0;
                 btn.classList.add('wrong');
                 playMissSound();
                 setBratLine(`😈 ${pick(MISS_LINES)}`, 'miss');
