@@ -473,8 +473,8 @@
 
         // ミスなしで れんぞく せいかい するほど、さけびごえは 高くなって いく。
         // まちがえた ボタンを おしたら もとの 高さに もどる。
-        const SCREAM_PITCH_STEP = 1.08;   // 1れんさ ごとの ばいりつ（はんおん より すこし ひろい）
-        const SCREAM_PITCH_MAX = 2.0;     // 上限は 1オクターブ 上
+        const SCREAM_PITCH_STEP = 1.13;   // 1れんさ ごとの ばいりつ（ぜんおん ぐらい）
+        const SCREAM_PITCH_MAX = 3.0;     // 上限は 1オクターブ半 上（10もん ノーミスで ちょうど ここ）
         let screamStreak = 0;             // ミスなしで つづけて せいかい した かず
 
         function screamPitchRatio() {
@@ -515,10 +515,13 @@
             vib.connect(vibGain);
             vibGain.connect(osc.frequency);
 
-            // 「あ」っぽい ひびき
+            // 「あ」っぽい ひびき。
+            // 高い こえに なるほど フィルタも すこし 上に ずらす。
+            // そうしないと 基音が バンドから はずれて、いちばん 高い さけびごえだけ
+            // ほそく 小さく なってしまう（＝せっかくの こうかが きこえない）。
             const formant = audioContext.createBiquadFilter();
             formant.type = 'bandpass';
-            formant.frequency.value = 850 + Math.random() * 550;
+            formant.frequency.value = (850 + Math.random() * 550) * Math.sqrt(screamPitchRatio());
             formant.Q.value = 2.5;
 
             const gain = audioContext.createGain();
